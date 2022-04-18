@@ -4,13 +4,11 @@ from discord.types.snowflake import Snowflake
 from dataclasses import dataclass
 from discord import Message, InteractionResponse
 from discord.abc import Messageable
-from discord.ext.i18n.language import Language, LANGCODES
-from discord.ext.i18n.cache import Cache
+from discord.ext.i18n.language import LANG_CODE2NAME, Language, LANG_NAME2CODE
 
 
 class Detector:
-    @staticmethod
-    async def first_language_of(ctx: Union[Message, InteractionResponse, Messageable]):
+    async def first_language_of(self, ctx: Union[Message, InteractionResponse, Messageable]):
         """
         Resolves the most precedent destination language from a context object.
         Other forms of checks are performed here.
@@ -29,20 +27,19 @@ class Detector:
             except AttributeError:
                 guild_id = None
         elif ctx._parent.message and ctx._parent.message.guild:
-            author_id = ctx._parent.message.id
+            author_id = ctx._parent.message.author.id
             guild_id = ctx._parent.message.guild.id
             channel_id = ctx._parent.message.channel.id
 
         if author_id:
-            dest_lang = await Detector.language_of(author_id)
+            dest_lang = await self.language_of(author_id)
         if not dest_lang and channel_id:
-            dest_lang = await Detector.language_of(channel_id)
+            dest_lang = await self.language_of(channel_id)
         if not dest_lang and guild_id:
-            dest_lang = await Detector.language_of(guild_id)
+            dest_lang = await self.language_of(guild_id)
         return dest_lang
 
-    @staticmethod
-    async def language_of(snowflake: Snowflake) -> Optional[Language]:
+    async def language_of(self, snowflake: Snowflake) -> Optional[Language]:
         """
         Resolves a destination language for a snowflake.
         """
@@ -65,10 +62,10 @@ class DetectionAgent:
         Extract the language code from a string if it exists.
         """
         *content, lang_id = s.split(DetectionAgent.delim)
-        if lang_id not in LANGCODES.keys():
+        if lang_id not in LANG_CODE2NAME.keys():
             return s, None
         else:
-            return content, lang_id
+            return DetectionAgent.delim.join(content), Language.from_code(lang_id)
 
 
 class Translator:
@@ -90,8 +87,8 @@ class Translator:
 
 
 class TranslationAgent:
-    def __init__(self, lang: Language, translator: Translator) -> None:
-        self.lang = lang
+    def __init__(self, dest_lang: Language, translator: Translator) -> None:
+        self.dest_lang = dest_lang
         self.translator = translator
 
     def translate(self, content: str):
@@ -99,7 +96,7 @@ class TranslationAgent:
         Tokenizes the source string into segments to translate individually
         for better accuracy.
         """
-        return self.trans_assemble(*self.tokenize(content), dest_lang=self.lang)
+        return self.trans_assemble(*self.tokenize(content), dest_lang=self.dest_lang)
 
     @staticmethod
     def tokenize(payload: str):

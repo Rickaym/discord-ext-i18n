@@ -8,13 +8,12 @@ from discord.http import HTTPClient
 from discord.interactions import InteractionResponse
 from discord.webhook.async_ import AsyncWebhookAdapter, WebhookMessage
 
-from discord.ext.i18n.language import Language, LANGCODES
+from discord.ext.i18n.language import Language, LANG_NAME2CODE
 from discord.ext.i18n.preprocess import (
     DetectionAgent, Detector,
     TranslationAgent, Translator
 )
-
-Messegable_send = Messageable.send
+Messageable_send = Messageable.send
 Message_edit = Message.edit
 HTTPClient_edit_message = HTTPClient.edit_message
 HTTPClient_send_message = HTTPClient.send_message
@@ -35,15 +34,13 @@ TODO: Improper translations when dealing with send_message requests
 LanguageGetterFn = Callable[[None], Coroutine[Any, Any, None]]
 
 
-def i18n_localizer(lang_id: str, kwds: Dict[str, Any], content: Optional[str]):
+def i18n_localizer(lang: Language, kwds: Dict[str, Any], content: Optional[str]):
     """
     Translates all necessary given content and UI keyword arguments with the local
     or preferential language settings.
     """
-    if lang_id != LANGCODES["english"]:
-        agent = TranslationAgent(
-                    Language.by_id(lang_id), translator=Agent.translator
-                )
+    if lang.code != LANG_NAME2CODE["english"]:
+        agent = TranslationAgent(lang, translator=Agent.translator)
         if content:
             content = agent.translate(content)
 
@@ -137,10 +134,10 @@ def i18n_HTTPClient_edit_message(
     with a guild.
     """
     if fields["content"]:
-        content, lang_id = DetectionAgent.decode_lang_str(fields["content"])
-        if lang_id:
+        content, lang = DetectionAgent.decode_lang_str(fields["content"])
+        if lang:
             fields, fields["content"] = i18n_localizer(
-                lang_id, fields, "".join(content)
+                lang, fields, "".join(content)
             )
     return HTTPClient_edit_message(self, channel_id, message_id, **fields)
 
@@ -184,9 +181,9 @@ def i18n_HTTPClient_send_message(
     with a guild.
     """
     if content:
-        payload, lang_id = DetectionAgent.decode_lang_str(content)
-        if lang_id:
-            kwds, content = i18n_localizer(lang_id, kwds, "".join(payload))
+        payload, lang = DetectionAgent.decode_lang_str(content)
+        if lang:
+            kwds, content = i18n_localizer(lang, kwds, "".join(payload))
     return HTTPClient_send_message(self, channel_id, content, **kwds)
 
 
@@ -199,10 +196,10 @@ def i18n_Adapter_create_interaction_response(self: AsyncWebhookAdapter, *args, *
     with a guild.
     """
     if kwds["data"] and "content" in kwds["data"]:
-        content, lang_id = DetectionAgent.decode_lang_str(kwds["data"]["content"])
-        if lang_id:
+        content, lang = DetectionAgent.decode_lang_str(kwds["data"]["content"])
+        if lang:
             kwds["data"], kwds["data"]["content"] = i18n_localizer(
-                lang_id, kwds["data"], "".join(content)
+                lang, kwds["data"], "".join(content)
             )
     return AsyncWebhookAdapter_create_interaction_response(self, *args, **kwds)
 
@@ -247,7 +244,7 @@ class Agent:
             i18n_Adapter_create_interaction_response,
         )
 
-        setattr(Messageable, "send", predicate_i18n_send(Messegable_send))
+        setattr(Messageable, "send", predicate_i18n_send(Messageable_send))
         setattr(
             InteractionResponse,
             "send_message",

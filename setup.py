@@ -11,7 +11,7 @@ version = ""
 with open("{}/__init__.py".format(prj_path)) as fp:
     version = search(
         r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', fp.read(), MULTILINE
-    ).group(1)
+    ).group(1) # type: ignore
 
 for desc in descriptors:
     try:

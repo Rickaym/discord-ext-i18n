@@ -1,6 +1,7 @@
 from enum import Enum
 
-LANGMOJIS = {
+
+LANG_CODE2EMOJIS = {
     "af": "🇿🇦",
     "sq": "🇦🇱",
     "am": "🇪🇹",
@@ -110,7 +111,7 @@ LANGMOJIS = {
     "zu": "🇿🇦",
 }
 
-LANGUAGE_MAP = {
+LANG_CODE2NAME = {
     'af': 'afrikaans',
     'sq': 'albanian',
     'am': 'amharic',
@@ -220,7 +221,7 @@ LANGUAGE_MAP = {
     'zu': 'zulu',
 }
 
-LANGCODES = dict(map(reversed, LANGUAGE_MAP.items()))
+LANG_NAME2CODE = dict(map(reversed, LANG_CODE2NAME.items())) # type: ignore
 
 class Language(Enum):
     """
@@ -337,7 +338,7 @@ class Language(Enum):
 
     @property
     def emoji(self):
-        return LANGMOJIS[LANGCODES[self.value]]
+        return LANG_CODE2EMOJIS.get(self.value, None)
 
     @property
     def code(self):
@@ -345,12 +346,12 @@ class Language(Enum):
 
     @property
     def name(self):
-        return LANGUAGE_MAP[self.value].title()
+        return LANG_CODE2NAME[self.value]
 
     @staticmethod
-    def by_id(lang_id: str) -> "Language":
-        return Language._member_map_[lang_id]
+    def from_code(lang_id: str) -> "Language":
+        return Language._value2member_map_[lang_id] # type: ignore
 
     @staticmethod
-    def by_name(name: str) -> "Language":
-        return Language._member_map_[LANGCODES[name]]
+    def from_name(name: str) -> "Language":
+        return Language.from_code(LANG_NAME2CODE[name])

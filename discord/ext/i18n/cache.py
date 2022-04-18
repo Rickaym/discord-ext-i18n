@@ -1,5 +1,5 @@
 import json
-import aiofiles
+import anyio
 import zlib
 
 from os import path, curdir, mkdir
@@ -21,17 +21,19 @@ class Cache:
         if not path.isfile(self.cache_pth):
             await self.empty()
         else:
-            async with aiofiles.open(
+            f = await anyio.open_file(
                 path.join(self.cache_dir, self.cache_fn), mode="r", encoding="utf-8"
-            ) as f:
-                self.internal_cache = json.loads(await f.read())
+            )
+            self.internal_cache = json.loads(await f.read())
+            await f.aclose()
 
     async def empty(self):
         """
         Empty the internal and external cache.
         """
-        async with aiofiles.open(self.cache_dir, mode="w", encoding="utf-8") as f:
-            await f.write("{}")
+        f = await anyio.open_file(self.cache_dir, mode="w", encoding="utf-8")
+        await f.write("{}")
+        await f.aclose()
         self.internal_cache = {}
 
     @staticmethod
