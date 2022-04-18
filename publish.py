@@ -3,13 +3,23 @@ Automatically publishing to pypi.
 """
 
 import wexpect
+import argparse
+
+from os import getenv
+from dotenv import load_dotenv
 
 def main():
-    setupfile = "setup.py"
-    child = wexpect.spawn("py", args=[setupfile, "sdist"])
+    load_dotenv()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--type", required=False)
+    args = parser.parse_args()
+    if args.type == "build":
+        print(".. BUILDING")
+        setupfile = "setup.py"
+        child = wexpect.spawn("py", args=[setupfile, "sdist"])
+        print(child.read())
+    child = wexpect.spawn("twine", args=[f"-u {getenv('PYPI_USERNAME')}", f"-p {getenv('PYPI_PASSWORD')}", "upload", "dist/*"])
     print(child.read())
-    #child = wexpect.spawn("twine", args=["upload", "dist/*"])
-    #print(child.read())
 
 if __name__ == "__main__":
     main()

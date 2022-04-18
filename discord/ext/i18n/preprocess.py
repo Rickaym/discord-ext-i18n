@@ -1,53 +1,20 @@
-from typing import Any, Dict, List, Coroutine, Callable, Optional, Union
-from googletrans import Translator, LANGCODES
+from googletrans import Translator as GoogleTranslator
+from typing import Any, Dict, List, Optional, Union
 from discord.types.snowflake import Snowflake
 from dataclasses import dataclass
 from discord import Message, InteractionResponse
 from discord.abc import Messageable
+from discord.ext.i18n.language import Language, LANGCODES
+from discord.ext.i18n.cache import Cache
 
 
-from i18n.language import Language
-from i18n.cache import Cache
-
-LanguageGetterFn = Callable[[None], Coroutine[Any, Any, None]]
-
-
-@dataclass
-class TokenList:
-    payload: str
-    tokens: List[Dict[str, Any]]
-
-    def assemble(self, dest_lang=None):
-        """
-        Re-assembles the tokens into a new string with all fragments
-        preserved.
-        """
-        new_str = list(self.payload)
-        mitigate = 0
-        for tk in self.tokens:
-            proper = tk["phrase"]
-            if dest_lang:
-                proper = (
-                    Translator()
-                    .translate(
-                        proper.strip().lower(), dest=dest_lang, src=LANGCODES["english"]
-                    )
-                    .text
-                )
-            new_str[tk["start_pos"] + mitigate : tk["end_pos"] + mitigate] = proper
-            if tk["end_pos"] - tk["start_pos"] <= len(proper):
-                mitigate += len(proper) - (tk["end_pos"] - tk["start_pos"])
-        return "".join(new_str)
-
-    def clean_string(self):
-        return " ".join(tk["phrase"] for tk in self.tokens)
-
-
-class DetectionAgent:
-    delim = "\u200b"
-
+class Detector:
     @staticmethod
     async def first_language_of(ctx: Union[Message, InteractionResponse, Messageable]):
+        """
+        Resolves the most precedent destination language from a context object.
+        Other forms of checks are performed here.
+        """
         guild_id = channel_id = author_id = dest_lang = None
         if isinstance(ctx, Message):
             author_id = ctx.author.id
@@ -58,7 +25,7 @@ class DetectionAgent:
             ch = await ctx._get_channel()
             channel_id = ch.id
             try:
-                guild_id = ch.guild.id # type: ignore
+                guild_id = ch.guild.id  # type: ignore
             except AttributeError:
                 guild_id = None
         elif ctx._parent.message and ctx._parent.message.guild:
@@ -67,24 +34,23 @@ class DetectionAgent:
             channel_id = ctx._parent.message.channel.id
 
         if author_id:
-            dest_lang = await DetectionAgent.language_of(author_id)
+            dest_lang = await Detector.language_of(author_id)
         if not dest_lang and channel_id:
-            dest_lang = await DetectionAgent.language_of(channel_id)
+            dest_lang = await Detector.language_of(channel_id)
         if not dest_lang and guild_id:
-            dest_lang = await DetectionAgent.language_of(guild_id)
+            dest_lang = await Detector.language_of(guild_id)
         return dest_lang
 
     @staticmethod
     async def language_of(snowflake: Snowflake) -> Optional[Language]:
         """
-        Retrieve the language of a snowflake, this is expected to be overridden
-        in some manner.
+        Resolves a destination language for a snowflake.
         """
         return None
 
-    @staticmethod
-    def set_language_getter(getter: LanguageGetterFn):
-        DetectionAgent.language_of = getter # type: ignore
+
+class DetectionAgent:
+    delim = "\u200b"
 
     @staticmethod
     def encode_lang_str(s: str, lang: Language):
@@ -104,19 +70,36 @@ class DetectionAgent:
         else:
             return content, lang_id
 
-@dataclass
+
+class Translator:
+    def __init__(self) -> None:
+        """
+        A simple wrapper around `googletrans.Translator` to allow the usage
+        of Langauge enum elements as source and destination lang
+        parameters.
+        """
+        self.antecedent = GoogleTranslator()
+
+    def translate(self, payload: str, dest_lang: Language, src_lang: Language):
+        """
+        Translates text from source language to destination language.
+        """
+        return self.antecedent.translate(
+            payload, dest=dest_lang.code, src=src_lang.code
+        ).text
+
+
 class TranslationAgent:
-    lang: str
+    def __init__(self, lang: Language, translator: Translator) -> None:
+        self.lang = lang
+        self.translator = translator
 
     def translate(self, content: str):
-        tokens = self.tokenize(content)
-        cached_trans = Cache.get_cache(self.lang, tokens.clean_string())
-        if cached_trans:
-            return cached_trans
-        else:
-            translated = tokens.assemble(dest_lang=self.lang)
-            Cache.cache_trans(self.lang, tokens.clean_string(), translated)
-            return translated
+        """
+        Tokenizes the source string into segments to translate individually
+        for better accuracy.
+        """
+        return self.trans_assemble(*self.tokenize(content), dest_lang=self.lang)
 
     @staticmethod
     def tokenize(payload: str):
@@ -171,7 +154,11 @@ class TranslationAgent:
                     init, end = stack[-1]["pos"], i - len(char)
                     if stack[-1]["char"] not in ignorables:
                         tokens.append(
-                            {"start_pos": init, "end_pos": end, "phrase": payload[init:end]}
+                            {
+                                "start_pos": init,
+                                "end_pos": end,
+                                "phrase": payload[init:end],
+                            }
                         )
                     stack.pop(-1)
                 elif char not in con_decoratives.values() and (
@@ -192,4 +179,36 @@ class TranslationAgent:
                 # decorative characters - phrase frames have numeric 0 as their char
                 stack.append({"char": 0, "pos": i})
             i += 1
-        return TokenList(payload, tokens)
+        return payload, tokens
+
+    def trans_assemble(
+        self,
+        payload: str,
+        tokens: List[Dict[str, Any]],
+        dest_lang: Optional[Language] = None,
+        src_lang: Language = Language.English,
+    ):
+        """
+        Re-assembles the tokens into a new string translated to the destination
+        language.
+
+        Parameters:
+            payload: the original string that is tokenized
+            tokens: a list of dictionaries about token data
+        """
+        new_str = list(payload)
+        mitigate = 0
+        for tk in tokens:
+            proper = tk["phrase"]
+            if dest_lang:
+                proper = self.translator.translate(
+                    proper.strip().lower(), dest_lang=dest_lang, src_lang=src_lang
+                )
+            new_str[tk["start_pos"] + mitigate : tk["end_pos"] + mitigate] = proper
+            if tk["end_pos"] - tk["start_pos"] <= len(proper):
+                mitigate += len(proper) - (tk["end_pos"] - tk["start_pos"])
+        return "".join(new_str)
+
+    @staticmethod
+    def clean_string(tokens: List[Dict[str, Any]]):
+        return " ".join(tk["phrase"] for tk in tokens)

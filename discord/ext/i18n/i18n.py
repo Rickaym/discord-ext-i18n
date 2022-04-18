@@ -1,32 +1,25 @@
-"""
-i18n for language localization of the discord bot interface .
-"""
-
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union, Coroutine
 from discord.types.snowflake import Snowflake
-from googletrans import LANGCODES
 from discord.enums import ComponentType
-
 from discord.abc import Messageable
 
-Messegable_send = Messageable.send
-
 from discord.message import Message
-
-Message_edit = Message.edit
-
 from discord.http import HTTPClient
-
-HTTPClient_send_message = HTTPClient.send_message
-HTTPClient_edit_message = HTTPClient.edit_message
-
 from discord.interactions import InteractionResponse
-
-InteractionResponse_send_message = InteractionResponse.send_message
-InteractionResponse_edit_message = InteractionResponse.edit_message
-
 from discord.webhook.async_ import AsyncWebhookAdapter, WebhookMessage
 
+from discord.ext.i18n.language import Language, LANGCODES
+from discord.ext.i18n.preprocess import (
+    DetectionAgent, Detector,
+    TranslationAgent, Translator
+)
+
+Messegable_send = Messageable.send
+Message_edit = Message.edit
+HTTPClient_edit_message = HTTPClient.edit_message
+HTTPClient_send_message = HTTPClient.send_message
+InteractionResponse_send_message = InteractionResponse.send_message
+InteractionResponse_edit_message = InteractionResponse.edit_message
 AsyncWebhookAdapter_create_interaction_response = (
     AsyncWebhookAdapter.create_interaction_response
 )
@@ -39,7 +32,7 @@ TODO: Improper translations when dealing with send_message requests
       Components are being translated twice
 """
 
-from .preprocess import DetectionAgent, TranslationAgent
+LanguageGetterFn = Callable[[None], Coroutine[Any, Any, None]]
 
 
 def i18n_localizer(lang_id: str, kwds: Dict[str, Any], content: Optional[str]):
@@ -48,7 +41,9 @@ def i18n_localizer(lang_id: str, kwds: Dict[str, Any], content: Optional[str]):
     or preferential language settings.
     """
     if lang_id != LANGCODES["english"]:
-        agent = TranslationAgent(lang_id)
+        agent = TranslationAgent(
+                    Language.by_id(lang_id), translator=Agent.translator
+                )
         if content:
             content = agent.translate(content)
 
@@ -121,7 +116,7 @@ def predicate_i18n_edit(overriden: Callable):
     async def wrapped_i18n_edit(
         self: Union[Message, InteractionResponse], **kwds
     ) -> Message:
-        dest_lang = await DetectionAgent.first_language_of(self)
+        dest_lang = await Agent.detector.first_language_of(self)
         if dest_lang:
             kwds["content"] = DetectionAgent.encode_lang_str(
                 kwds.get("content", None) or "", dest_lang
@@ -166,7 +161,7 @@ def predicate_i18n_send(overriden: Callable):
     async def wrapped_i18n_send(
         self: Union[Messageable, InteractionResponse], content=None, *_, **kwds
     ):
-        dest_lang = await DetectionAgent.first_language_of(self)
+        dest_lang = await Agent.detector.first_language_of(self)
         if dest_lang:
             content = DetectionAgent.encode_lang_str(content, dest_lang)
         return await overriden(self, content, **kwds)
@@ -212,47 +207,64 @@ def i18n_Adapter_create_interaction_response(self: AsyncWebhookAdapter, *args, *
     return AsyncWebhookAdapter_create_interaction_response(self, *args, **kwds)
 
 
-def init():
-    """
-    Sets initialized injectors to override any necessary high and low level methods
-    that pertains to the guild based bot UI elements. Guild based bot UI elements
-    includes any message sending and editing methods, views and button components (no selects).
+class Agent:
+    translator = Translator()
+    detector = Detector()
 
-    ### Injections
-    Various high level and low level methods are overriden to realize language
-    preferences and when needed, text is automatically translated.
+    def __init__(self, translator: Optional[Translator]=None, detector: Optional[Detector]=None):
+        """
+        Sets initialized injectors to override necessary high and low level
+        methods that implements the bot interface.
+        At any given time, there can only be one translator or a detector,
+        therefore, instantiating more `Agent` classes will override any
+        installed detector and translator.
 
-    UI method -> `Realizes Guild Language` + `Translation` -> Discord API
+        ### Injections
+        Surround your text with `\\u200b` to prevent being translated.
+        This is a zero-width character and it will not affect your message output
+        in any way even if you removed uninstalled `discord-ext-i18n`.
 
-    Surround your text with `\\u200b` to prevent being translated.
-    This is a zero-width character and it will not affect your message output
-    in any way even if you removed i18n.
+        E.g. `\\u200b`report`\\u200b` can be used to avoid reperations!
 
-    E.g. `\\u200b`report`\\u200b` can be used to avoid reperations!
-    The affected methods are:
-        Messegable.send
+        Interfaces Affected Includes:
+            - message sending/reply/edit/respond
+            - views and button components
+            - selects and modals
 
-        HTTPClient.send_message
-    """
-    setattr(
-        AsyncWebhookAdapter,
-        "create_interaction_response",
-        i18n_Adapter_create_interaction_response,
-    )
+        Methods Affected methods Includes:
+            - AsyncWebhookAdapter.create_interaction_response
+            - Messegable.send
+            - InteractionResponse.send_message
+            - HTTPClient.send_message
+            - Message.edit
+            - InteractionResponse.edit_message
+            - WebhookMessage.edit
+            - HTTPClient.edit_message
+        """
+        setattr(
+            AsyncWebhookAdapter,
+            "create_interaction_response",
+            i18n_Adapter_create_interaction_response,
+        )
 
-    setattr(Messageable, "send", predicate_i18n_send(Messegable_send))
-    setattr(
-        InteractionResponse,
-        "send_message",
-        predicate_i18n_send(InteractionResponse_send_message),
-    )
-    setattr(HTTPClient, "send_message", i18n_HTTPClient_send_message)
+        setattr(Messageable, "send", predicate_i18n_send(Messegable_send))
+        setattr(
+            InteractionResponse,
+            "send_message",
+            predicate_i18n_send(InteractionResponse_send_message),
+        )
+        setattr(HTTPClient, "send_message", i18n_HTTPClient_send_message)
 
-    setattr(Message, "edit", predicate_i18n_edit(Message_edit))
-    setattr(
-        InteractionResponse,
-        "edit_message",
-        predicate_i18n_edit(InteractionResponse_edit_message),
-    )
-    setattr(WebhookMessage, "edit", predicate_i18n_edit(WebhookMessage_edit))
-    setattr(HTTPClient, "edit_message", i18n_HTTPClient_edit_message)
+        setattr(Message, "edit", predicate_i18n_edit(Message_edit))
+        setattr(
+            InteractionResponse,
+            "edit_message",
+            predicate_i18n_edit(InteractionResponse_edit_message),
+        )
+        setattr(WebhookMessage, "edit", predicate_i18n_edit(WebhookMessage_edit))
+        setattr(HTTPClient, "edit_message", i18n_HTTPClient_edit_message)
+
+        if translator:
+            Agent.translator = translator
+        if detector:
+            Agent.detector = detector
