@@ -1,0 +1,10 @@
+# cache
+*.pyc
+.**
+!.gitignore
+
+# pypi
+discord_ext_i18n.egg-info
+dist
+MANIFEST
+i18j.egg-info
