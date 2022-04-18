@@ -1,0 +1,13 @@
+LICENSE
+README.md
+setup.py
+discord/ext/i18n/__init__.py
+discord/ext/i18n/cache.py
+discord/ext/i18n/i18n.py
+discord/ext/i18n/language.py
+discord/ext/i18n/preprocess.py
+discord_ext_i18n.egg-info/PKG-INFO
+discord_ext_i18n.egg-info/SOURCES.txt
+discord_ext_i18n.egg-info/dependency_links.txt
+discord_ext_i18n.egg-info/requires.txt
+discord_ext_i18n.egg-info/top_level.txt

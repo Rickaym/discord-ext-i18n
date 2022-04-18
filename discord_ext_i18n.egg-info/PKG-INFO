@@ -1,0 +1,21 @@
+Metadata-Version: 2.1
+Name: discord-ext-i18n
+Version: 0.0.1
+Summary: A extension supporting fully automated i18j translations for bot interface.
+Home-page: https://github.com/Rickaym/discord-ext-i18n
+Author: Rickaym
+License: MIT
+Project-URL: Issue tracker, https://github.com/Rickaym/discord-ext-i18n/issues
+Platform: UNKNOWN
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.10
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+UNKNOWN
+
