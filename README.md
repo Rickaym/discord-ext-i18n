@@ -1,4 +1,4 @@
-# An I18J extension for [discord.py](https://github.com/Rapptz/discord.py & forks)
+# An I18J extension for [discord.py](https://github.com/Rapptz/discord.py) and forks.
 
 ![GitHub](https://img.shields.io/github/license/Rickaym/discord-ext-i18n)
 ![Status](https://img.shields.io/badge/status-unreleased-red)

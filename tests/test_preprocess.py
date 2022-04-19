@@ -152,7 +152,9 @@ def test_lossless_encode():
     for string in test_strings:
         lang = choice(langs)
         enc_str = agent.encode_lang_str(string, lang)
-        assert enc_str != string
+        detection = Translator.antecedent.detect(string)
+        if lang.code != detection.lang:
+            assert enc_str != string
         dec_str, dec_lang = agent.decode_lang_str(enc_str)
         assert lang is dec_lang
         assert dec_str == string
