@@ -2,6 +2,7 @@
 
 ![GitHub](https://img.shields.io/github/license/Rickaym/discord-ext-i18n)
 ![Status](https://img.shields.io/badge/status-unreleased-red)
+[![Coverage Status](https://coveralls.io/repos/github/Rickaym/discord-ext-i18n/badge.svg?branch=master)](https://coveralls.io/github/Rickaym/discord-ext-i18n?branch=master)
 
 ## Key Features
 
