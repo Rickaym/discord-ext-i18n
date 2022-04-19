@@ -1,14 +1,15 @@
 from googletrans import Translator as GoogleTranslator
 from typing import Any, Dict, List, Optional, Union
 from discord.types.snowflake import Snowflake
-from dataclasses import dataclass
 from discord import Message, InteractionResponse
 from discord.abc import Messageable
-from discord.ext.i18n.language import LANG_CODE2NAME, Language, LANG_NAME2CODE
+from discord.ext.i18n.language import LANG_CODE2NAME, Language
 
 
 class Detector:
-    async def first_language_of(self, ctx: Union[Message, InteractionResponse, Messageable]):
+    async def first_language_of(
+        self, ctx: Union[Message, InteractionResponse, Messageable]
+    ):
         """
         Resolves the most precedent destination language from a context object.
         Other forms of checks are performed here.
@@ -54,7 +55,11 @@ class DetectionAgent:
         """
         Append the language code into the string with a delimiter.
         """
-        return f"{s}{DetectionAgent.delim}{lang.code}"
+        detection = Translator.antecedent.detect(s)
+        if lang.code != detection.lang:
+            return f"{s}{DetectionAgent.delim}{lang.code}"
+        else:
+            return s
 
     @staticmethod
     def decode_lang_str(s: str):
@@ -69,13 +74,14 @@ class DetectionAgent:
 
 
 class Translator:
+    antecedent = GoogleTranslator()
+
     def __init__(self) -> None:
         """
         A simple wrapper around `googletrans.Translator` to allow the usage
-        of Langauge enum elements as source and destination lang
+        of Language enum elements as source and destination lang
         parameters.
         """
-        self.antecedent = GoogleTranslator()
 
     def translate(self, payload: str, dest_lang: Language, src_lang: Language):
         """

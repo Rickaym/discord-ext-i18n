@@ -5,6 +5,7 @@ from discord.ext.i18n.language import (
     LANG_CODE2NAME,
 )
 
+
 def test_correspondence():
     """
     Test if the properties of the `Language` aligns with the dictionary
@@ -68,6 +69,7 @@ def test_dict_complete():
 
     assert k_code2names == v_name2codes
 
+
 def test_enum_complete():
     """
     Test the completeness of the `Language` enum based on dictionary
@@ -78,7 +80,10 @@ def test_enum_complete():
     v_name2codes = set(LANG_NAME2CODE.values())
 
     e_excess_codes = list(
-        filter(lambda item: v_code2names.count(item[1].name) == 2, Language._value2member_map_.items())
+        filter(
+            lambda item: v_code2names.count(item[1].name) == 2,
+            Language._value2member_map_.items(),
+        )
     )
     for code in e_excess_codes:
         v_enum_codes.add(code[0])

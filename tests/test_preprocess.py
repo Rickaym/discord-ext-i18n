@@ -1,8 +1,4 @@
-import sys
 from typing import Any
-
-
-sys.path.append(r"D:\Programming\Python\Projects\disi18n")
 from discord.ext.i18n.language import Language
 from discord.abc import Messageable
 from discord.ext.i18n.preprocess import (
@@ -11,14 +7,16 @@ from discord.ext.i18n.preprocess import (
     TranslationAgent,
     Translator,
 )
-from discord import Guild, Interaction, InteractionResponse, Member, Message, NotFound, TextChannel
+from discord import (
+    Guild,
+    Interaction,
+    InteractionResponse,
+    Member,
+    Message,
+    TextChannel,
+)
 from string import printable
 from random import choice, randint, random
-
-
-class MimeTranslator(Translator):
-    def translate(self, payload: str, dest_lang: Language, src_lang: Language):
-        return f"<As {dest_lang.name} from {src_lang} {payload}>"
 
 
 def fobj(base=object, **kwds):
@@ -62,12 +60,17 @@ def generate_string_tuple(amount: int, min_slen: int, max_slen: int):
     return tuple(test_strings)
 
 
+class MimeTranslator(Translator):
+    def translate(self, payload: str, dest_lang: Language, src_lang: Language):
+        return f"<As {dest_lang.name} from {src_lang} {payload}>"
+
+
 def test_assembly():
     """
     Test whether if tokenizing and reassembling strings is
     correct.
     """
-    test_strings = generate_string_tuple(10, 10, 50)
+    test_strings = generate_string_tuple(30, 10, 50)
     agent = TranslationAgent(Language.English, MimeTranslator())
     for string in test_strings:
         payload, tks = agent.tokenize(string)
@@ -78,7 +81,7 @@ def test_translation_attempt():
     """
     Test whether if the translate method is properly put to use.
     """
-    test_strings = generate_string_tuple(10, 10, 50)
+    test_strings = generate_string_tuple(30, 10, 50)
     agent = TranslationAgent(Language.Swahili, MimeTranslator())
     for string in test_strings:
         assert agent.translate(string) == agent.trans_assemble(
@@ -119,7 +122,9 @@ async def test_detection():
         kwds: Any = {
             "guild": fobj(Guild, id=generate_long_num(12)),
         }
-        kwds["channel"] = fobj(TextChannel, id=generate_long_num(12), guild=kwds["guild"])
+        kwds["channel"] = fobj(
+            TextChannel, id=generate_long_num(12), guild=kwds["guild"]
+        )
 
         if base in (Message, InteractionResponse):
             kwds["author"] = fobj(Member, id=generate_long_num(12))
@@ -141,14 +146,13 @@ async def test_detection():
 
 
 def test_lossless_encode():
-    test_strings = generate_string_tuple(10, 10, 50)
+    test_strings = generate_string_tuple(15, 10, 50)
     agent = DetectionAgent()
     langs = list(Language._member_map_.values())
     for string in test_strings:
         lang = choice(langs)
         enc_str = agent.encode_lang_str(string, lang)
         assert enc_str != string
-
         dec_str, dec_lang = agent.decode_lang_str(enc_str)
         assert lang is dec_lang
         assert dec_str == string

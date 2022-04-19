@@ -1,35 +1,3 @@
-# An I18J extension for [discord.py](https://github.com/Rapptz/discord.py) (& forks)
-
-![GitHub](https://img.shields.io/github/license/Rickaym/discord-ext-i18n)
-
-## Key Features
-
-- Very minimal setup required
-- Forward Compatiblity
-- Facilitates for full control if needed
-
-## Installing
-
-This is not a standalone package, it is an extension for `discord.py` and it's corresponding hooks like `py-cord`. Therefore it is recommended that there exists an installation of `discord.py==2.0` or any equivalent forks.
-
-To install this extension, run the following command:
-
-```
-# Linux/macOS
-python3 -m pip install -U discord-ext-i18n
-
-# Windows
-py -3 -m pip install -U discord-ext-i18n
-```
-
-## Quick Example
-
-**Required Steps**:
-- Subclass the `discord.ext.i18n.preprocess.Detector` class to define your own language getter. (this getter is called with an ID of *users/guild/channel* to see if it has a language attached)
-- Instantiate a `discord.ext.i18n.Agent` class to inject
-- Make a command so that users can set preferences.
-
-```py
 from typing import Optional
 from discord.ext import commands
 from discord import Intents
@@ -79,4 +47,3 @@ async def greet(ctx):
 
 
 bot.run(...)
-```
