@@ -1,6 +1,6 @@
 import warnings
 
-from typing import Any, Callable, Dict, Optional, Union, Coroutine
+from typing import Any, Callable, Dict, List, Optional, Union, Coroutine
 from discord import Interaction
 from discord.types.snowflake import Snowflake
 from discord.enums import ComponentType
@@ -9,6 +9,7 @@ from discord.message import Message
 from discord.http import HTTPClient
 from discord.interactions import InteractionResponse
 from discord.webhook.async_ import AsyncWebhookAdapter, WebhookMessage
+from discord.ext.i18n.cache import Cache
 from discord.ext.i18n.language import Language
 from discord.ext.i18n.preprocess import (
     DetectionAgent,
@@ -205,7 +206,7 @@ class Agent:
     def __init__(
         self,
         translator: Optional[Translator] = None,
-        detector: Optional[Detector] = None,
+        detector: Optional[Detector] = None
     ):
         """
         Sets initialized injectors to override necessary high and low level
@@ -287,3 +288,7 @@ class Agent:
                     NotImplementedWarning
                     )
             Agent.detector = detector
+
+    def precache(self, src: str, lang_list: List[Language]):
+        ag = TranslationAgent(lang_list)
+        # CONTINUE HERE

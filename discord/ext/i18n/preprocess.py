@@ -1,12 +1,32 @@
+import inspect
+
 from googletrans import Translator as GoogleTranslator
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 from discord.types.snowflake import Snowflake
 from discord import Message, InteractionResponse
 from discord.abc import Messageable
+from discord.ext.i18n.cache import Cache
 from discord.ext.i18n.language import LANG_CODE2NAME, Language
 
 
+def isinstancemethod(func: Callable) -> bool:
+    """
+    Returns whether if a given function is a staticmethod or an
+    instancemethod/classmethod.
+    """
+    return "self" in inspect.getfullargspec(func)[0]
+
+
 class Detector:
+    def __new__(cls, *args: Any, **kwargs: Any):
+        obj = super().__new__(cls)
+        for item_name in dir(obj):
+            item = getattr(obj, item_name, None)
+            if callable(item):
+                if hasattr(item, "__lang_getter__"):
+                    Detector.language_of = item
+        return obj
+
     async def first_language_of(
         self, ctx: Union[Message, InteractionResponse, Messageable]
     ):
@@ -40,11 +60,19 @@ class Detector:
             dest_lang = await self.language_of(guild_id)
         return dest_lang
 
-    async def language_of(self, snowflake: Snowflake) -> Optional[Language]:
+    @staticmethod
+    async def language_of(snowflake: Snowflake) -> Optional[Language]:
         """
         Resolves a destination language for a snowflake.
         """
         return None
+
+    @staticmethod
+    def language_getter(fn: Any):
+        fn.__lang_getter__ = fn
+        if not isinstancemethod(fn):
+            Detector.language_of = staticmethod(fn)
+        return fn
 
 
 class DetectionAgent:
@@ -93,6 +121,8 @@ class Translator:
 
 
 class TranslationAgent:
+    cache = Cache()
+
     def __init__(self, dest_lang: Language, translator: Translator) -> None:
         self.dest_lang = dest_lang
         self.translator = translator
@@ -102,7 +132,14 @@ class TranslationAgent:
         Tokenizes the source string into segments to translate individually
         for better accuracy.
         """
-        return self.trans_assemble(*self.tokenize(content), dest_lang=self.dest_lang)
+        cached = TranslationAgent.cache.get_cache(content, self.dest_lang)
+        if not cached:
+            cached = self.trans_assemble(
+                    *self.tokenize(content),
+                    dest_lang=self.dest_lang
+                )
+            TranslationAgent.cache.set_cache(content, self.dest_lang, cached)
+        return cached
 
     @staticmethod
     def tokenize(payload: str):

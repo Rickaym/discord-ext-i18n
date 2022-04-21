@@ -5,9 +5,10 @@
 
 ## Key Features
 
-- Very minimal setup required
-- Forward Compatiblity
-- Facilitates for full control if needed
+- Automatic translation for all outgoing texts within 3 simple steps
+- Cached translations with garbage collection
+- Cog incorporability
+- Fully customizable; if needed you can override implementations of the translator and detector, cache framework.
 
 ## Installing
 
@@ -26,7 +27,7 @@ py -3 -m pip install -U discord-ext-i18n
 ## Quick Example
 
 **Required Steps**:
-- Subclass the `discord.ext.i18n.preprocess.Detector` class to define your own language getter. (this getter is called with an ID of *users/guild/channel* to see if it has a language attached)
+- Subclass the `discord.ext.i18n.preprocess.Detector` class to define your own language getter. (this getter is called with an ID of *users / guilds / channels* to see if it has a language attached)
 - Instantiate a `discord.ext.i18n.Agent` class to inject
 - Make a command so that users can set preferences.
 
@@ -34,8 +35,7 @@ py -3 -m pip install -U discord-ext-i18n
 from typing import Optional
 from discord.ext import commands
 from discord import Intents
-from discord.ext.i18n import Agent, Language
-from discord.ext.i18n.preprocess import Detector
+from discord.ext.i18n import Agent, Language, Detector
 
 intents = Intents.default()
 # not necessary for the extension, enabled only for msg commands
@@ -47,18 +47,16 @@ bot = commands.Bot(
     intents=intents,
 )
 bot.preferences = {}
+bot.agent = Agent()
 
 
-class LangDetector(Detector):
-    async def language_of(self, id) -> Optional[Language]:
-        """
-        Override the function to define our own. Get language of a snowflake ID,
-        return None by default.
-        """
-        return bot.preferences.get(id, None)
-
-
-bot.agent = Agent(detector=LangDetector())
+@Detector.language_getter
+async def get_lang(id) -> Optional[Language]:
+    """
+    Override the function to define our own. Get language of a snowflake ID,
+    return None by default.
+    """
+    return bot.preferences.get(id, None)
 
 
 @bot.command(name="lang")
