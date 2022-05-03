@@ -1,9 +1,9 @@
 from typing import Any
+from unittest.mock import Mock
 from discord.ext.i18n.language import Language
 from discord.abc import Messageable
 from discord.ext.i18n.preprocess import (
     Detector,
-    DetectionAgent,
     TranslationAgent,
     Translator,
 )
@@ -15,11 +15,15 @@ from discord import (
     Message,
     TextChannel,
 )
-from string import printable
-from random import choice, randint, random
+from tests.utils import MimeCache
+from utils import generate_string_tuple, MimeTranslator, generate_long_num
+from random import choice
 
 
-def fobj(base=object, **kwds):
+TranslationAgent.cache = MimeCache()
+
+
+def m_obj(base=object, **kwds):
     """
     Creates an object with the desired base and worksaround the parent class's
     demands for a __slot__.
@@ -49,32 +53,16 @@ def fobj(base=object, **kwds):
     return Mime()
 
 
-def generate_string(min_slen: int, max_slen: int):
-    return "".join(choice(printable) for i in range(randint(min_slen, max_slen)))
-
-
-def generate_string_tuple(amount: int, min_slen: int, max_slen: int):
-    test_strings = []
-    for _ in range(amount):
-        test_strings.append(generate_string(min_slen, max_slen))
-    return tuple(test_strings)
-
-
-class MimeTranslator(Translator):
-    def translate(self, payload: str, dest_lang: Language, src_lang: Language):
-        return f"<As {dest_lang.name} from {src_lang} {payload}>"
-
-
 def test_assembly():
     """
     Test whether if tokenizing and reassembling strings is
     correct.
     """
     test_strings = generate_string_tuple(30, 10, 50)
-    agent = TranslationAgent(Language.English, MimeTranslator())
+    mime = MimeTranslator()
+    agent = TranslationAgent(Language.English, mime)
     for string in test_strings:
-        payload, tks = agent.tokenize(string)
-        assert string == agent.trans_assemble(payload, tks)
+        assert string == agent.trans_assemble(string, agent.tokenize(string))
 
 
 def test_translation_attempt():
@@ -85,12 +73,8 @@ def test_translation_attempt():
     agent = TranslationAgent(Language.Swahili, MimeTranslator())
     for string in test_strings:
         assert agent.translate(string) == agent.trans_assemble(
-            *agent.tokenize(string), dest_lang=Language.Swahili
+            string, agent.tokenize(string)
         )
-
-
-def generate_long_num(place: int):
-    return int(random() * (10 ** place))
 
 
 def generate_preferences(amount: int):
@@ -120,14 +104,14 @@ async def test_detection():
         base = mock_classes.get(i, choice(list(mock_classes.values())))
         appr_keys = ["channel", "guild"]
         kwds: Any = {
-            "guild": fobj(Guild, id=generate_long_num(12)),
+            "guild": m_obj(Guild, id=generate_long_num(12)),
         }
-        kwds["channel"] = fobj(
+        kwds["channel"] = m_obj(
             TextChannel, id=generate_long_num(12), guild=kwds["guild"]
         )
 
         if base in (Message, InteractionResponse):
-            kwds["author"] = fobj(Member, id=generate_long_num(12))
+            kwds["author"] = m_obj(Member, id=generate_long_num(12))
             appr_keys.append("author")
 
         # Make sure that at least one of the available IDs reflect a
@@ -136,25 +120,32 @@ async def test_detection():
         kwds[choice(appr_keys)].set_id(item[0])
 
         if base == InteractionResponse:
-            kwds = {"_parent": fobj(Interaction, message=fobj(Message, **kwds))}
+            kwds = {"_parent": m_obj(Interaction, message=m_obj(Message, **kwds))}
 
-        test_objects[fobj(base, id=i, **kwds)] = item
+        test_objects[m_obj(base, id=i, **kwds)] = item
 
     agent = SubclassedDetector()
     for obj, item in test_objects.items():
         assert await agent.first_language_of(obj) is item[1]
 
 
-def test_lossless_encode():
-    test_strings = generate_string_tuple(15, 10, 50)
-    agent = DetectionAgent()
-    langs = list(Language._member_map_.values())
-    for string in test_strings:
-        lang = choice(langs)
-        enc_str = agent.encode_lang_str(string, lang)
-        detection = Translator.antecedent.detect(string)
-        if lang.code != detection.lang:
-            assert enc_str != string
-        dec_str, dec_lang = agent.decode_lang_str(enc_str)
-        assert lang is dec_lang
-        assert dec_str == string
+def test_tokenize():
+    def mk_token(start, name, end):
+        return {
+            "start_pos": start,
+            "end_pos": end,
+            "phrase": name,
+        }
+
+    agent = TranslationAgent(Language.English, Translator())
+    test_map = {
+        "What **is** your name?": [
+            mk_token(0, "What ", 5),
+            mk_token(7, "is", 9),
+            mk_token(12, "your name?", 22),
+        ],
+    }
+    agent.cache = Mock()
+    for src, tokenls in test_map.items():
+        assert agent.tokenize(src) == tokenls
+

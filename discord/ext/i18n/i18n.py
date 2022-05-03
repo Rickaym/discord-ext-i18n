@@ -9,7 +9,6 @@ from discord.message import Message
 from discord.http import HTTPClient
 from discord.interactions import InteractionResponse
 from discord.webhook.async_ import AsyncWebhookAdapter, WebhookMessage
-from discord.ext.i18n.cache import Cache
 from discord.ext.i18n.language import Language
 from discord.ext.i18n.preprocess import (
     DetectionAgent,

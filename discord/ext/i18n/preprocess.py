@@ -1,5 +1,4 @@
 import inspect
-
 from googletrans import Translator as GoogleTranslator
 from typing import Any, Callable, Dict, List, Optional, Union
 from discord.types.snowflake import Snowflake
@@ -24,7 +23,7 @@ class Detector:
             item = getattr(obj, item_name, None)
             if callable(item):
                 if hasattr(item, "__lang_getter__"):
-                    Detector.language_of = item
+                    Detector.language_of = item # type: ignore
         return obj
 
     async def first_language_of(
@@ -71,7 +70,7 @@ class Detector:
     def language_getter(fn: Any):
         fn.__lang_getter__ = fn
         if not isinstancemethod(fn):
-            Detector.language_of = staticmethod(fn)
+            Detector.language_of = staticmethod(fn) # type: ignore
         return fn
 
 
@@ -132,13 +131,7 @@ class TranslationAgent:
         Tokenizes the source string into segments to translate individually
         for better accuracy.
         """
-        cached = TranslationAgent.cache.get_cache(content, self.dest_lang)
-        if not cached:
-            cached = self.trans_assemble(
-                    *self.tokenize(content),
-                    dest_lang=self.dest_lang
-                )
-            TranslationAgent.cache.set_cache(content, self.dest_lang, cached)
+        cached = self.trans_assemble(content, self.tokenize(content))
         return cached
 
     @staticmethod
@@ -157,7 +150,8 @@ class TranslationAgent:
         # of a phrase that is decorated
         decoratives = ("`", "*", "_", "<", "\u200b")
         # An unexhaustive dict of all characters that marks the end
-        # of a phrase that is decorated, when not specified, the delimiter is itself
+        # of a phrase that is decorated, when not specified, the delimiter is
+        # itself
         con_decoratives = {"<": ">"}
         # A list of decoratives where the inner text is ignored
         ignorables = ("<", "\u200b")
@@ -170,7 +164,7 @@ class TranslationAgent:
                 and stack[-1]["char"] == 0
                 and (char == "\n" or char in decoratives or i == len(payload) - 1)
             ):
-                # If it is almost the end of the string and the characters are sensible
+                # At the end of the string and if the characters are sensible
                 # we'll add this and break out
                 if i == len(payload) - 1 and not (char in decoratives or char == "\n"):
                     i += 1
@@ -181,8 +175,8 @@ class TranslationAgent:
                 stack.pop(-1)
 
             if char in decoratives or char in con_decoratives.values():
-                # Upon reaching a decorative, we'll start making a new token until
-                # the same decorative is met
+                # Upon reaching a decorative, we'll start making a new token
+                # until the same decorative is met
                 i += 1
                 while i < len(payload) and payload[i] in char:
                     char += payload[i]
@@ -204,9 +198,10 @@ class TranslationAgent:
                 elif char not in con_decoratives.values() and (
                     not stack or stack[-1]["char"] not in ignorables
                 ):
-                    # The character shouldn't be a delimiter and the last frame of
-                    # the stack must not be an ignorable - in a sense we won't insist
-                    # on making new tokens inside an inconclusive ignorable
+                    # The character shouldn't be a delimiter and the last frame
+                    # of the stack must not be an ignorable - in a sense we
+                    # won't insist on making new tokens inside an inconclusive
+                    # ignorable
                     if char == "```":
                         while i < len(payload) and payload[i] != "\n":
                             i += 1
@@ -219,13 +214,12 @@ class TranslationAgent:
                 # decorative characters - phrase frames have numeric 0 as their char
                 stack.append({"char": 0, "pos": i})
             i += 1
-        return payload, tokens
+        return tokens
 
     def trans_assemble(
         self,
         payload: str,
         tokens: List[Dict[str, Any]],
-        dest_lang: Optional[Language] = None,
         src_lang: Language = Language.English,
     ):
         """
@@ -239,14 +233,19 @@ class TranslationAgent:
         new_str = list(payload)
         mitigate = 0
         for tk in tokens:
-            proper = tk["phrase"]
-            if dest_lang:
-                proper = self.translator.translate(
-                    proper.strip().lower(), dest_lang=dest_lang, src_lang=src_lang
-                )
-            new_str[tk["start_pos"] + mitigate : tk["end_pos"] + mitigate] = proper
-            if tk["end_pos"] - tk["start_pos"] <= len(proper):
-                mitigate += len(proper) - (tk["end_pos"] - tk["start_pos"])
+            phrase = tk["phrase"]
+            if self.dest_lang:
+                cached = self.cache.get_cache(phrase, self.dest_lang)
+                if not cached:
+                    cached = self.translator.translate(
+                        phrase, dest_lang=self.dest_lang, src_lang=src_lang
+                    )
+                    self.cache.set_cache(phrase, self.dest_lang, cached)
+
+                phrase = cached
+            new_str[tk["start_pos"] + mitigate: tk["end_pos"] + mitigate] = phrase
+            if tk["end_pos"] - tk["start_pos"] <= len(phrase):
+                mitigate += len(phrase) - (tk["end_pos"] - tk["start_pos"])
         return "".join(new_str)
 
     @staticmethod

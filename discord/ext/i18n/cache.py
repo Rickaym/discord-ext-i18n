@@ -3,7 +3,6 @@ import anyio
 import asyncio
 
 from os import path, curdir, mkdir
-from typing import Union
 from discord.ext.i18n.language import Language
 
 
@@ -40,15 +39,18 @@ class Cache:
         await f.aclose()
         self.internal_cache = {}
 
+    def task(self, coro):
+        asyncio.create_task(coro)
+
     def set_cache(
-        self, src: Union[str, bytes], lang: Language, translated: Union[str, bytes]
+        self, src: str, lang: Language, translated: str
     ):
         if src in self.internal_cache:
             self.internal_cache[src][lang.code] = translated
         else:
             self.internal_cache[src] = {lang.code: translated}
-        asyncio.create_task(self.save_cache())
+        self.task(self.save_cache())
 
-    def get_cache(self, src: Union[str, bytes], lang: Language):
+    def get_cache(self, src: str, lang: Language):
         if src in self.internal_cache and lang.code in self.internal_cache[src]:
             return self.internal_cache[src][lang.code]

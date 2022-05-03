@@ -21,5 +21,6 @@ def main():
     child = wexpect.spawn("twine", args=[f"-u {getenv('PYPI_USERNAME')}", f"-p {getenv('PYPI_PASSWORD')}", "upload", "dist/*"])
     print(child.read())
 
+
 if __name__ == "__main__":
     main()

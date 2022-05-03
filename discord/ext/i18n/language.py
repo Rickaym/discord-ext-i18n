@@ -339,15 +339,15 @@ class Language(Enum):
     Zulu = "zu"
 
     @property
-    def emoji(self):
+    def emoji(self) -> str:
         return LANG_CODE2EMOJIS.get(self.value, None)
 
     @property
-    def code(self):
+    def code(self) -> str:
         return self.value
 
     @property
-    def name(self):
+    def name(self) -> str:
         return LANG_CODE2NAME[self.value]
 
     @staticmethod
