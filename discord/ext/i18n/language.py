@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 
 
 LANG_CODE2EMOJIS = {
@@ -339,7 +340,7 @@ class Language(Enum):
     Zulu = "zu"
 
     @property
-    def emoji(self) -> str:
+    def emoji(self) -> Optional[str]:
         return LANG_CODE2EMOJIS.get(self.value, None)
 
     @property
@@ -351,9 +352,9 @@ class Language(Enum):
         return LANG_CODE2NAME[self.value]
 
     @staticmethod
-    def from_code(lang_id: str) -> "Language":
-        return Language._value2member_map_[lang_id]  # type: ignore
+    def from_code(lang_id: str) -> Optional["Language"]:
+        return Language._value2member_map_.get(lang_id, None)  # type: ignore
 
     @staticmethod
-    def from_name(name: str) -> "Language":
+    def from_name(name: str):
         return Language.from_code(LANG_NAME2CODE[name])

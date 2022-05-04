@@ -1,6 +1,4 @@
-import warnings
-
-from typing import Any, Callable, Dict, List, Optional, Union, Coroutine
+from typing import Any, Callable, Dict, Optional, Union, Coroutine
 from discord import Interaction
 from discord.types.snowflake import Snowflake
 from discord.enums import ComponentType
@@ -39,71 +37,6 @@ TODO: Improper translations when dealing with send_message requests
 """
 
 
-def translate_payload(
-    lang: Language,
-    payload: Dict[str, Any],
-    content: Optional[str]
-):
-    """
-    Translates a payload JSON object about to be sent to it's corresponding
-    discord API Endpoint.
-    """
-    agent = TranslationAgent(lang, translator=Agent.translator)
-    if content:
-        content = agent.translate(content)
-
-    if "embeds" in payload and payload["embeds"]:
-        embeds = payload["embeds"]
-    else:
-        embeds = []
-
-    if "embed" in payload:
-        embeds.append(payload["embed"])
-
-    for i, template_embed in enumerate(embeds):
-        if template_embed:
-            embed = template_embed.copy()
-            if "fields" in embed:
-                for field in embed["fields"]:
-                    if field["name"].strip() and field["name"] != "\u200b":
-                        field["name"] = agent.translate(field["name"])
-                    if field["value"].strip() and field["value"] != "\u200b":
-                        field["value"] = agent.translate(field["value"])
-
-            if (
-                "author" in embed
-                and "name" in embed["author"]
-                and embed["author"]["name"].strip()
-            ):
-                embed["author"]["name"] = agent.translate(embed["author"]["name"])
-
-            if (
-                "footer" in embed
-                and "text" in embed["footer"]
-                and embed["footer"]["text"].strip()
-            ):
-                embed["footer"]["text"] = agent.translate(embed["footer"]["text"])
-
-            if "description" in embed and embed["description"].strip():
-                embed["description"] = agent.translate(embed["description"])
-
-            if "title" in embed and embed["title"].strip():
-                embed["title"] = agent.translate(embed["title"])
-            embeds[i] = embed
-
-    if "components" in payload and payload["components"]:
-        for i, template_row in enumerate(payload["components"]):
-            if template_row:
-                row = template_row.copy()
-                for item in row["components"]:
-                    if item["type"] is ComponentType.button.value:
-                        if item["label"]:
-                            item["label"] = agent.translate(item["label"])
-                payload["components"][i] = row
-
-    return payload, content
-
-
 def predicate_i18n_edit(edit_func: InterfaceOverridable):
     """
     Returns a wrapped edit function that appends a language suffix into the
@@ -136,9 +69,7 @@ def i18n_HTTPClient_edit_message(
     if fields["content"]:
         content, lang = DetectionAgent.decode_lang_str(fields["content"])
         if lang:
-            fields, fields["content"] = translate_payload(
-                lang, fields, "".join(content)
-            )
+            fields, fields["content"] = Agent.translate_payload(lang, fields, content)
     return HTTPClient_edit_message(self, channel_id, message_id, **fields)
 
 
@@ -173,7 +104,7 @@ def i18n_HTTPClient_send_message(
     if content:
         payload, lang = DetectionAgent.decode_lang_str(content)
         if lang:
-            kwds, content = translate_payload(lang, kwds, "".join(payload))
+            kwds, content = Agent.translate_payload(lang, kwds, payload)
     return HTTPClient_send_message(self, channel_id, content, **kwds)
 
 
@@ -188,24 +119,32 @@ def i18n_Adapter_create_interaction_response(self: AsyncWebhookAdapter, *args, *
     if kwds["data"] and "content" in kwds["data"]:
         content, lang = DetectionAgent.decode_lang_str(kwds["data"]["content"])
         if lang:
-            kwds["data"], kwds["data"]["content"] = translate_payload(
-                lang, kwds["data"], "".join(content)
+            kwds["data"], kwds["data"]["content"] = Agent.translate_payload(
+                lang, kwds["data"], content
             )
     return AsyncWebhookAdapter_create_interaction_response(self, *args, **kwds)
-
-
-class NotImplementedWarning(UserWarning):
-    ...
 
 
 class Agent:
     translator = Translator()
     detector = Detector()
 
+    translate_messages = True
+    translate_embeds = False
+    translate_buttons = False
+    translate_selects = False
+    translate_modals = False
+
     def __init__(
         self,
         translator: Optional[Translator] = None,
-        detector: Optional[Detector] = None
+        detector: Optional[Detector] = None,
+        translate_all: Optional[bool] = None,
+        translate_messages: Optional[bool] = None,
+        translate_embeds: Optional[bool] = None,
+        translate_buttons: Optional[bool] = None,
+        translate_selects: Optional[bool] = None,
+        translate_modals: Optional[bool] = None,
     ):
         """
         Sets initialized injectors to override necessary high and low level
@@ -219,7 +158,10 @@ class Agent:
         This is a zero-width character and it will not affect your message
         output in any way even if you removed uninstalled `discord-ext-i18n`.
 
-        E.g. `\\u200b`report`\\u200b` can be used to avoid reperations!
+        E.g. `\\u200b`report`\\u200b`
+
+        You can also start a string with `\\u200b` to entirely avoid
+        translating.
 
         Interfaces Affected Includes:
             - message sending/reply/edit/respond
@@ -242,52 +184,121 @@ class Agent:
             i18n_Adapter_create_interaction_response,
         )
 
-        setattr(
-            Messageable,
-            "send",
-            predicate_i18n_send(Messageable_send)
-        )
+        setattr(Messageable, "send", predicate_i18n_send(Messageable_send))
         setattr(
             InteractionResponse,
             "send_message",
             predicate_i18n_send(InteractionResponse_send_message),
         )
-        setattr(
-            HTTPClient,
-            "send_message",
-            i18n_HTTPClient_send_message
-        )
-        setattr(
-            Message,
-            "edit",
-            predicate_i18n_edit(Message_edit)
-        )
+        setattr(HTTPClient, "send_message", i18n_HTTPClient_send_message)
+        setattr(Message, "edit", predicate_i18n_edit(Message_edit))
         setattr(
             InteractionResponse,
             "edit_message",
             predicate_i18n_edit(InteractionResponse_edit_message),
         )
-        setattr(
-            WebhookMessage,
-            "edit",
-            predicate_i18n_edit(WebhookMessage_edit)
-        )
-        setattr(
-            HTTPClient,
-            "edit_message",
-            i18n_HTTPClient_edit_message
-        )
+        setattr(WebhookMessage, "edit", predicate_i18n_edit(WebhookMessage_edit))
+        setattr(HTTPClient, "edit_message", i18n_HTTPClient_edit_message)
 
-        if translator:
-            Agent.translator = translator
-        if detector:
-            if detector.language_of is Agent.detector.language_of:
-                warnings.warn(
-                    "You forgot to implement the `language_of` function!",
-                    NotImplementedWarning
-                    )
-            Agent.detector = detector
+        for key, val in {
+            "translator": translator,
+            "detecetor": detector,
+            "translate_messages": translate_messages,
+            "translate_embeds": translate_embeds,
+            "translate_buttons": translate_buttons,
+            "translate_selects": translate_selects,
+            "translate_modals": translate_modals,
+        }.items():
+            if translate_all and key.startswith("translate_"):
+                setattr(Agent, key, True)
+            elif val is not None:
+                setattr(Agent, key, val)
 
-    def precache(self, src: str, lang_list: List[Language]):
-        ag = TranslationAgent(lang_list)
-        # CONTINUE HERE
+    @staticmethod
+    def translate_payload(
+        lang: Language, payload: Dict[str, Any], content: Optional[str]
+    ):
+        """
+        Translates a payload JSON object about to be sent to it's corresponding
+        discord API Endpoint.
+        """
+        agent = TranslationAgent(lang, translator=Agent.translator)
+        if Agent.translate_messages:
+            if content:
+                content = agent.translate(content)
+
+        if Agent.translate_embeds:
+            if "embeds" in payload and payload["embeds"]:
+                embeds = payload["embeds"]
+            else:
+                embeds = []
+
+            if "embed" in payload:
+                embeds.append(payload["embed"])
+
+            for i, template_embed in enumerate(embeds):
+                if template_embed:
+                    embed = template_embed.copy()
+                    if "fields" in embed:
+                        for field in embed["fields"]:
+                            if field["name"].strip() and field["name"] != "\u200b":
+                                field["name"] = agent.translate(field["name"])
+                            if field["value"].strip() and field["value"] != "\u200b":
+                                field["value"] = agent.translate(field["value"])
+
+                    if (
+                        "author" in embed
+                        and "name" in embed["author"]
+                        and embed["author"]["name"].strip()
+                    ):
+                        embed["author"]["name"] = agent.translate(
+                            embed["author"]["name"]
+                        )
+
+                    if (
+                        "footer" in embed
+                        and "text" in embed["footer"]
+                        and embed["footer"]["text"].strip()
+                    ):
+                        embed["footer"]["text"] = agent.translate(
+                            embed["footer"]["text"]
+                        )
+
+                    if "description" in embed and embed["description"].strip():
+                        embed["description"] = agent.translate(embed["description"])
+
+                    if "title" in embed and embed["title"].strip():
+                        embed["title"] = agent.translate(embed["title"])
+                    embeds[i] = embed
+
+            if len(embeds) > 1:
+                payload["embeds"] = embeds
+            elif len(embeds) == 1:
+                payload["embed"] = embeds[0]
+
+        if Agent.translate_buttons or Agent.translate_selects:
+            if "components" in payload and payload["components"]:
+                for i, template_row in enumerate(payload["components"]):
+                    if template_row:
+                        row = template_row.copy()
+
+                        for item in row["components"]:
+                            if (
+                                item["type"] == ComponentType.button.value
+                                and Agent.translate_buttons
+                            ):
+                                if item["label"]:
+                                    item["label"] = agent.translate(item["label"])
+                            elif (
+                                item["type"] == ComponentType.select.value
+                                and Agent.translate_selects
+                            ):
+                                if "placeholder" in item and item["placeholder"]:
+                                    item["placeholder"] = agent.translate(
+                                        item["placeholder"]
+                                    )
+                                for opt in item["options"]:
+                                    opt["label"] = agent.translate(opt["label"])
+                        payload["components"][i] = row
+
+        return payload, content

@@ -13,34 +13,32 @@ bot = commands.Bot(
     intents=intents,
 )
 bot.preferences = {}
-bot.agent = Agent()  # THIS MUST BE INSTANTIATED!
+bot.agent = Agent(translate_all=True)  # THIS MUST BE INSTANTIATED!
 
 
-@Detector.language_getter
-async def get_lang(id: int) -> Optional[Language]:
+@Detector.lang_getter
+async def get_lang(id) -> Optional[Language]:
     """
-    Set a language getter that gets the preferred
-    language from a bot dict by ID if it exists.
+    This decorated function will be called internally to get Language
+    preferences.
     """
     return bot.preferences.get(id, None)
 
 
 @bot.command(name="lang")
 async def set_lang(ctx, lang_code):
-    """
-    A simple command to set a language preference to the current channel.
-    """
     lang = Language.from_code(lang_code)
-    bot.preferences[ctx.channel.id] = lang
-    await ctx.reply(f"I've set the language to `{lang.name.title()}` {lang.emoji}!")
+    if lang is None:
+        return await ctx.reply("Bad language code!")
+    else:
+        # Set a language preference to the current channel.
+        bot.preferences[ctx.channel.id] = lang
+        await ctx.reply(f"I've set the language to `{lang.name.title()}` {lang.emoji}!")
 
 
 @bot.command(name="hi")
 async def greet(ctx):
-    """
-    Replies with "Hey!!" in the preferred language of
-    the current channel. No code change here.
-    """
+    # This will be translated in the backend.
     await ctx.reply("Hey!!")
 
 

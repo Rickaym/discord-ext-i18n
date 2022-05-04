@@ -1,4 +1,5 @@
 import inspect
+
 from googletrans import Translator as GoogleTranslator
 from typing import Any, Callable, Dict, List, Optional, Union
 from discord.types.snowflake import Snowflake
@@ -23,7 +24,7 @@ class Detector:
             item = getattr(obj, item_name, None)
             if callable(item):
                 if hasattr(item, "__lang_getter__"):
-                    Detector.language_of = item # type: ignore
+                    Detector.language_of = item  # type: ignore
         return obj
 
     async def first_language_of(
@@ -67,10 +68,10 @@ class Detector:
         return None
 
     @staticmethod
-    def language_getter(fn: Any):
+    def lang_getter(fn: Any):
         fn.__lang_getter__ = fn
         if not isinstancemethod(fn):
-            Detector.language_of = staticmethod(fn) # type: ignore
+            Detector.language_of = staticmethod(fn)  # type: ignore
         return fn
 
 
@@ -82,6 +83,9 @@ class DetectionAgent:
         """
         Append the language code into the string with a delimiter.
         """
+        if not s:
+            return f"{DetectionAgent.delim}{lang.code}"
+
         detection = Translator.antecedent.detect(s)
         if lang.code != detection.lang:
             return f"{s}{DetectionAgent.delim}{lang.code}"
@@ -97,7 +101,7 @@ class DetectionAgent:
         if lang_id not in LANG_CODE2NAME.keys():
             return s, None
         else:
-            return DetectionAgent.delim.join(content), Language.from_code(lang_id)
+            return DetectionAgent.delim.join(content) or None, Language.from_code(lang_id)
 
 
 class Translator:
@@ -117,6 +121,10 @@ class Translator:
         return self.antecedent.translate(
             payload, dest=dest_lang.code, src=src_lang.code
         ).text
+
+    @staticmethod
+    def translator(fn: Any):
+        pass
 
 
 class TranslationAgent:

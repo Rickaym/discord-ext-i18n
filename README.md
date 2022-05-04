@@ -1,20 +1,20 @@
-# An automatic string translation extension for [PyCord](https://github.com/Pycord-Development/pycord)
+# Automatic Translation Extension for [PyCord](https://github.com/Pycord-Development/pycord)
 
 ![GitHub](https://img.shields.io/github/license/Rickaym/discord-ext-i18n)
 [![Coverage Status](https://coveralls.io/repos/github/Rickaym/discord-ext-i18n/badge.svg?branch=master)](https://coveralls.io/github/Rickaym/discord-ext-i18n?branch=master)
 
 ## Key Features
 
-- Automatic string translation with no code changes
-- Cached translations with garbage collection
-- Cog incorporability
+- Automatic message, embed etc.. translation with no code changes
 - Fully customizable
 - Forward Compatible
 
-In essence, this extension will translate all
+In essence, the extension can translate all
 specified objects [here](#coverage) into any registered language
 depending on the preferences of the channel or guild that the object
-is getting sent to. It will be very helpful to go through this short [FAQ](#features-extended--faq).
+is getting sent to. For instance, if a channel has the preference for Spanish, any text being sent to the channel will be automatically translated into Spanish before it is sent.
+
+Check out the [FAQ](#features-extended--faq) for more information.
 
 ## Installing
 
@@ -33,9 +33,12 @@ py -3 -m pip install -U discord-ext-i18n
 ## Quick Example
 
 **Required Steps**:
-- Subclass the `discord.ext.i18n.preprocess.Detector` class to define your own language getter. (this getter is called with an ID of *guilds / channels* to see if it has a language preference)
-- Instantiate a `discord.ext.i18n.Agent` class to inject
-- Make a command so that users can set preferences.
+- Define a language getter function by decorating it with the
+`discord.ext.i18n.preprocess.Detector.language_getter` decorator
+(this getter is called with an ID of *guilds / channels* to see if it has a
+language preference)
+- Instantiate a `discord.ext.i18n.Agent` class (this is where injection occur)
+- Make a command so that users can set preferences
 
 ```py
 from typing import Optional
@@ -53,34 +56,32 @@ bot = commands.Bot(
     intents=intents,
 )
 bot.preferences = {}
-bot.agent = Agent()  # THIS MUST BE INSTANTIATED!
+bot.agent = Agent(translate_all=True)  # THIS MUST BE INSTANTIATED!
 
 
-@Detector.language_getter
-async def get_lang(id: int) -> Optional[Language]:
+@Detector.lang_getter
+async def get_lang(id) -> Optional[Language]:
     """
-    Set a language getter that gets the preferred
-    language from a bot dict by ID if it exists.
+    This decorated function will be called internally to get Language
+    preferences.
     """
     return bot.preferences.get(id, None)
 
 
 @bot.command(name="lang")
 async def set_lang(ctx, lang_code):
-    """
-    A simple command to set a language preference to the current channel.
-    """
     lang = Language.from_code(lang_code)
-    bot.preferences[ctx.channel.id] = lang
-    await ctx.reply(f"I've set the language to `{lang.name.title()}` {lang.emoji}!")
+    if lang is None:
+        return await ctx.reply("Bad language code!")
+    else:
+        # Set a language preference to the current channel.
+        bot.preferences[ctx.channel.id] = lang
+        await ctx.reply(f"I've set the language to `{lang.name.title()}` {lang.emoji}!")
 
 
 @bot.command(name="hi")
 async def greet(ctx):
-    """
-    Replies with "Hey!!" in the preferred language of
-    the current channel. No code change here.
-    """
+    # This will be translated in the backend.
     await ctx.reply("Hey!!")
 
 
@@ -95,9 +96,10 @@ bot.run(...)
 4. [When are strings not translated?](#when-are-strings-not-translated)
 
 ### How do we tell the extension to translate x?
-Simply put, it translates everything given [here](#coverage). This means
-that you will need to explicitly specify if translation is not needed in certain
-strings.
+Generally, the extension will translate all messages. If you want
+it to translate other things such as buttons, embeds and so on, you will have
+to explicitly specify them when instantiating the `Agent` class or edit the
+`translate_x` flag from the class. See detailed examples [here](./examples/settings)
 
 Apart from that, you can call the usual methods like `Messegable.send`,
 `ApplicationContext.respond` with your texts and the translation will be
@@ -128,4 +130,4 @@ the language preferred by the destination or the destination has no preference.
 - `Interaction Messages`
 - `Embeds`
 - `Views`
-- `Modals`.
+- `Modals`
