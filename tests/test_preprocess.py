@@ -20,9 +20,6 @@ from utils import generate_string_tuple, MimeTranslator, generate_long_num
 from random import choice
 
 
-TranslationAgent.cache = MimeCache()
-
-
 def m_obj(base=object, **kwds):
     """
     Creates an object with the desired base and worksaround the parent class's
@@ -60,7 +57,7 @@ def test_assembly():
     """
     test_strings = generate_string_tuple(30, 10, 50)
     mime = MimeTranslator()
-    agent = TranslationAgent(Language.English, mime)
+    agent = TranslationAgent(Language.English, mime, False)
     for string in test_strings:
         assert string == agent.trans_assemble(string, agent.tokenize(string))
 
@@ -70,7 +67,7 @@ def test_translation_attempt():
     Test whether if the translate method is properly put to use.
     """
     test_strings = generate_string_tuple(30, 10, 50)
-    agent = TranslationAgent(Language.Swahili, MimeTranslator())
+    agent = TranslationAgent(Language.Swahili, MimeTranslator(), False)
     for string in test_strings:
         assert agent.translate(string) == agent.trans_assemble(
             string, agent.tokenize(string)

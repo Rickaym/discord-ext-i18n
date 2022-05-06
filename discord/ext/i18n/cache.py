@@ -11,11 +11,7 @@ class Cache:
         self.cache_dir = path.join(curdir, dir)
         self.cache_fn = filename
         self.cache_pth = path.join(self.cache_dir, self.cache_fn)
-        if not path.isdir(self.cache_dir):
-            if mkdir(dir) == 1:
-                raise ValueError(f"Could not make a cache folder at {self.cache_dir}")
-        with open(self.cache_pth, mode="r", encoding="utf-8") as f:
-            self.internal_cache = json.load(f)
+        self.sync_loaded = False
 
     async def load_cache(self):
         if not path.isfile(self.cache_pth):
@@ -24,6 +20,17 @@ class Cache:
             f = await anyio.open_file(self.cache_pth, mode="r", encoding="utf-8")
             self.internal_cache = json.loads(await f.read())
             await f.aclose()
+
+    def load_cache_sync(self):
+        if not self.sync_loaded:
+            self.sync_loaded = True
+            if not path.isdir(self.cache_dir):
+                if mkdir(self.cache_dir) == 1:
+                    raise ValueError(
+                        f"Could not make a cache folder at {self.cache_dir}"
+                    )
+            with open(self.cache_pth, mode="r", encoding="utf-8") as f:
+                self.internal_cache = json.load(f)
 
     async def save_cache(self):
         f = await anyio.open_file(self.cache_pth, mode="w", encoding="utf-8")
@@ -42,9 +49,7 @@ class Cache:
     def task(self, coro):
         asyncio.create_task(coro)
 
-    def set_cache(
-        self, src: str, lang: Language, translated: str
-    ):
+    def set_cache(self, src: str, lang: Language, translated: str):
         if src in self.internal_cache:
             self.internal_cache[src][lang.code] = translated
         else:

@@ -163,15 +163,16 @@ class Translator:
 
 
 class TranslationAgent:
-    cache = Cache()
     decoratives = {"`": "`", "*": "*", "_": "_", "<": ">", "(": ")", "\u200b": "\u200b"}
+    cache = Cache()
 
     def __init__(
         self, dest_lang: Language, translator: Translator, enable_cache: bool = True
     ) -> None:
         self.dest_lang = dest_lang
         self.translator = translator
-        self.enable_cache = enable_cache
+        if enable_cache:
+            self.cache.load_cache_sync()
 
     def translate(self, content: str):
         """
@@ -269,14 +270,14 @@ class TranslationAgent:
 
             if self.dest_lang:
                 cached = None
-                if self.enable_cache:
+                if self.cache:
                     cached = self.cache.get_cache(phrase, self.dest_lang)
 
                 if not cached:
                     cached = self.translator.translate(
                         phrase, dest_lang=self.dest_lang, src_lang=src_lang
                     )
-                    if self.enable_cache:
+                    if self.cache:
                         self.cache.set_cache(phrase, self.dest_lang, cached)
 
                 phrase = cached
