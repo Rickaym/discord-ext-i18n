@@ -14,8 +14,9 @@ with open("{}/__init__.py".format(prj_path)) as fp:
     ).group(1)  # type: ignore
 
 for desc in descriptors:
-    with open(desc) as f:
+    with open(desc, encoding="utf-8") as f:
         long_description += f.read()
+
 setup(
     name=prj_name,
     version=version,

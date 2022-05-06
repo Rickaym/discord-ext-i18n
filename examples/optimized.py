@@ -49,4 +49,4 @@ async def rand_num(ctx):
     await ctx.reply(f"Your random number is \u200b{randint(0, 100)}\u200b!")
 
 
-bot.run(...)
+bot.run("TOKEN")

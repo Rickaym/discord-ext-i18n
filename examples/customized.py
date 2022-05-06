@@ -58,4 +58,4 @@ async def greet(ctx):
     await ctx.reply("Hey!!")
 
 
-bot.run(...)
+bot.run("TOKEN")

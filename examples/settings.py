@@ -31,10 +31,6 @@ Agent.translate_embeds = False
 
 @Detector.lang_getter
 async def get_lang(id) -> Optional[Language]:
-    """
-    This decorated function will be called internally to get Language
-    preferences.
-    """
     return bot.preferences.get(id, None)
 
 
@@ -71,4 +67,4 @@ async def trans_setting(ctx, option, state):
         Agent.translate_modals = state
 
 
-bot.run(...)
+bot.run("TOKEN")

@@ -159,4 +159,4 @@ async def slash_modal(ctx):
     await ctx.send_modal(MyModal(title="Input Form"))
 
 
-bot.run(...)
+bot.run("TOKEN")

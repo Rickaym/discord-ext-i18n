@@ -122,7 +122,7 @@ bot.run(...)
 Generally, the extension will translate all messages. If you want
 it to translate other things such as buttons, embeds and so on, you will have
 to explicitly specify them as parameters when instantiating the `Agent` class or modify the
-`translate_x` flag from the class. See detailed examples [here](./examples/settings)
+`translate_x` flag from the class. See detailed examples [here](https://github.com/Rickaym/discord-ext-i18n/blob/master/examples/settings.py)
 
 Apart from that, you can call the usual methods like `Messegable.send`,
 `ApplicationContext.respond` with your texts and the translation will be
@@ -143,7 +143,7 @@ and other book-keeping occurs if necessary.
 
 By default, the extension translates your strings using the [Google Translator](https://pypi.org/project/googletrans/)
 library. You can override this with your own translator like in the example
-[here](./examples/modified_translator.py).
+[here](https://github.com/Rickaym/discord-ext-i18n/blob/master/examples/customized.py).
 
 ### When are strings not translated?
 
@@ -154,6 +154,7 @@ the language preferred by the destination or the destination has no preference.
 
 #### TODO
 
-[] Defer interaction responses only if translation doesn't exist in cache
+[-] Defer interaction responses only if translation doesn't exist in cache
+[-] Resolve the issue with not being able to translate in time for `Modals` plus they can't be deferred
 
 Contributions are absolutely welcome, just create a pull-request and I'll merge them if reasonable.

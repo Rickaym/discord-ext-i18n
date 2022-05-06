@@ -46,4 +46,4 @@ class SomeCog(commands.Cog, Detector):
 
 bot.add_cog(SomeCog(bot))
 
-bot.run(...)
+bot.run("TOKEN")
