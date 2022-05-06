@@ -19,11 +19,12 @@ bot.preferences = {}
 # For ease of access, you can set these flags when
 # instantiating the class like below.
 bot.agent = Agent(
-    translate_selects=True, translate_all=True  # just set everything else to true also
+    translate_selects=True,
+    translate_all=True  # just set everything else to true also
 )
 
 # You may also change these flags outside like below by setting it to the class
-# not the instance as these flags are universal.
+# NOT INSTANCES as these flags are universal.
 Agent.translate_buttons = False
 Agent.translate_embeds = False
 

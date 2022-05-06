@@ -40,11 +40,11 @@ async def rand_num(ctx):
 
     In this example, we can estimate that this string can be translated in
     100 ways based on the random results of the number.
-    This may bogs down the speed unnecessarily.
+    This could affect the speed negatively.
 
     In this case we can wrap the variable fragment of the string with
     \u200b or zero width unicode characters that tells the translator to skip
-    this phrase.
+    the phrase.
     """
     await ctx.reply(f"Your random number is \u200b{randint(0, 100)}\u200b!")
 

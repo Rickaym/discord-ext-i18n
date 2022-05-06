@@ -1,24 +1,41 @@
-# Automatic Translation Extension for [PyCord](https://github.com/Pycord-Development/pycord)
+# Auto Translation Extension for [PyCord](https://github.com/Pycord-Development/pycord)
 
-![GitHub](https://img.shields.io/github/license/Rickaym/discord-ext-i18n)
-[![Coverage Status](https://coveralls.io/repos/github/Rickaym/discord-ext-i18n/badge.svg?branch=master)](https://coveralls.io/github/Rickaym/discord-ext-i18n?branch=master)
+
+<a herf="https://discord.gg/UmnzdPgn6g"><img src="https://img.shields.io/badge/GET SUPPORT-DISCORD-orange?style=for-the-badge&logo=discord&logoColor=white&color=5865F2"></a>
+<a herf="https://github.com/Pycord-Development/pycord"><img src="https://img.shields.io/badge/Pycord-%3E%3D2.0.0-orange?style=for-the-badge&logo=python&logoColor=white"></a>
+
 
 ## Key Features
 
-- Automatic message, embed etc.. translation with no code changes
+- Automatic message, embed, button select langauge translations
+- No code changes necessary
 - Fully customizable
 - Forward Compatible
 
-In essence, the extension can translate all
-specified objects [here](#coverage) into any registered language
+Essentially, the extension is able to automatically translate all
+specified objects [here](#fields-covered-by-automatic-translation) into any registered language
 depending on the preferences of the channel or guild that the object
 is getting sent to. For instance, if a channel has the preference for Spanish, any text being sent to the channel will be automatically translated into Spanish before it is sent.
 
+Translations carry over formatting as much as possible.
+<img src="./images/example.png"><br>
+_GoogleTranslated string in a different language with formatting maintaing_
+
 Check out the [FAQ](#features-extended--faq) for more information.
+This extension is relatively new, therefore please report any bugs at [issues](https://github.com/Rickaym/discord-ext-i18n/issues).
+
+## Fields Covered by Automatic Translation
+
+- `Messages`
+- `Interaction Messages`
+- `Embeds`
+- `Buttons`
+- `Selects`
+- `Modals` (buggy)
 
 ## Installing
 
-This is an extension for `PyCord`. It is recommended that there exists an installation of `py-cord>=2.0.0b5`.
+This is an extension for `PyCord`. It is recommended that there exists an installation of `py-cord>=2.0.0`.
 
 To install this extension, run the following command:
 
@@ -33,10 +50,11 @@ py -3 -m pip install -U discord-ext-i18n
 ## Quick Example
 
 **Required Steps**:
+
 - Define a language getter function by decorating it with the
-`discord.ext.i18n.preprocess.Detector.language_getter` decorator
-(this getter is called with an ID of *guilds / channels* to see if it has a
-language preference)
+  `discord.ext.i18n.preprocess.Detector.language_getter` decorator
+  (this getter is called with an ID of _guilds / channels_ to see if it has a
+  language preference)
 - Instantiate a `discord.ext.i18n.Agent` class (this is where injection occur)
 - Make a command so that users can set preferences
 
@@ -56,7 +74,7 @@ bot = commands.Bot(
     intents=intents,
 )
 bot.preferences = {}
-bot.agent = Agent(translate_all=True)  # THIS MUST BE INSTANTIATED!
+bot.agent = Agent(translate_all=True)  # This must be instantiated at least and only once
 
 
 @Detector.lang_getter
@@ -81,7 +99,7 @@ async def set_lang(ctx, lang_code):
 
 @bot.command(name="hi")
 async def greet(ctx):
-    # This will be translated in the backend.
+    # This will be translated before sent if necessary
     await ctx.reply("Hey!!")
 
 
@@ -96,38 +114,42 @@ bot.run(...)
 4. [When are strings not translated?](#when-are-strings-not-translated)
 
 ### How do we tell the extension to translate x?
+
 Generally, the extension will translate all messages. If you want
 it to translate other things such as buttons, embeds and so on, you will have
-to explicitly specify them when instantiating the `Agent` class or edit the
+to explicitly specify them as parameters when instantiating the `Agent` class or modify the
 `translate_x` flag from the class. See detailed examples [here](./examples/settings)
 
 Apart from that, you can call the usual methods like `Messegable.send`,
 `ApplicationContext.respond` with your texts and the translation will be
-gracefully handled in the backend. Absolutely
+handled in the backend. Absolutely
 no code change is necessary when calling these high-level methods. Check out the many examples to see specific cases.
 
 ### How does the extension work?
-As an overview; when you call high-level methods such as `Messegable.send`
+
+When you call high-level methods e.g. `Messegable.send`
 the extension intercepts the text and destination it's being sent to. It resolves
 whether if this text requires translation by calling the language getter with the
-ID of the destination and if it does, it will append
-the language code into the content field. This inscription is later intercepted
-before it gets sent to the discord API where tokenization, translation, caching
+ID of its destination. If it exists, it will append
+the language code into an appropriate field. This appendage is later extracted
+before text gets sent to the discord API where tokenization, translation, caching
 and other book-keeping occurs if necessary.
 
 ### What does it use to translate the string?
+
 By default, the extension translates your strings using the [Google Translator](https://pypi.org/project/googletrans/)
 library. You can override this with your own translator like in the example
 [here](./examples/modified_translator.py).
 
-
 ### When are strings not translated?
+
 Obviously, the strings will not be translated if they're either already in
 the language preferred by the destination or the destination has no preference.
 
-### Coverage
-- `Messages`
-- `Interaction Messages`
-- `Embeds`
-- `Views`
-- `Modals`
+---
+
+#### TODO
+
+[] Defer interaction responses only if translation doesn't exist in cache
+
+Contributions are absolutely welcome, just create a pull-request and I'll merge them if reasonable.

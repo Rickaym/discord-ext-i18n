@@ -13,7 +13,7 @@ bot = commands.Bot(
     intents=intents,
 )
 bot.preferences = {}
-bot.agent = Agent(translate_all=True)  # THIS MUST BE INSTANTIATED!
+bot.agent = Agent(translate_all=True)  # This must be instantiated at least and only once
 
 
 @Detector.lang_getter
@@ -38,7 +38,7 @@ async def set_lang(ctx, lang_code):
 
 @bot.command(name="hi")
 async def greet(ctx):
-    # This will be translated in the backend.
+    # This will be translated before sent if necessary
     await ctx.reply("Hey!!")
 
 

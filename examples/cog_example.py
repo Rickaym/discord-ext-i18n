@@ -16,8 +16,8 @@ bot.agent = Agent(translate_all=True)
 
 class SomeCog(commands.Cog, Detector):
     """
-    A `language_getter` defined inside a cog must be subclassed under
-    `Detector` (entirely compatible with a cog).
+    A language getter defined inside a cog must be subclassed under Detector.
+    (compatible with a cog).
     """
 
     def __init__(self, bot: commands.Bot) -> None:

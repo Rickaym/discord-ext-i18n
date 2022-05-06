@@ -1,13 +1,13 @@
 from typing import Optional
 from discord.ext import commands
 from discord import (
-    ApplicationContext,
     Color,
     Embed,
     Intents,
     SelectOption,
     slash_command,
 )
+from random import randint
 from discord.ext.i18n import Agent, Language, Detector
 from discord.enums import InputTextStyle
 from discord.ui import View, Button, Modal, Select
@@ -18,7 +18,7 @@ intents.messages = True
 intents.message_content = True
 
 bot = commands.Bot(
-    command_prefix="!", intents=intents, debug_guilds=[805782778473611315]
+    command_prefix="!", intents=intents
 )
 bot.preferences = {}
 bot.agent = Agent(translate_all=True)
@@ -37,6 +37,35 @@ async def set_lang(ctx, lang_code):
     else:
         bot.preferences[ctx.channel.id] = lang
         await ctx.reply(f"I've set the language to `{lang.name.title()}` {lang.emoji}!")
+
+
+@bot.command(name="set")
+async def trans_setting(ctx, option, state):
+    """
+    Turn on and off translation features for given
+    interfaces through a command.
+    """
+    if state not in ("True", "False"):
+        return await ctx.reply(f"\u200b`{state}`\u200b is not a valid state.")
+    else:
+        await ctx.reply("Changing state!")
+
+    state = False if state == "False" else True
+    if option == "messages":
+        Agent.translate_messages = state
+    elif option == "embeds":
+        Agent.translate_embeds = state
+    elif option == "buttons":
+        Agent.translate_buttons = state
+    elif option == "selects":
+        Agent.translate_selects = state
+    elif option == "modals":
+        Agent.translate_modals = state
+
+
+@bot.command(name="rand")
+async def rand_num(ctx):
+    await ctx.reply(f"Your random number is \u200b{randint(0, 100)}\u200b!")
 
 
 @bot.command(name="hi")
@@ -130,4 +159,4 @@ async def slash_modal(ctx):
     await ctx.send_modal(MyModal(title="Input Form"))
 
 
-bot.run(...)
+bot.run(..)
