@@ -134,7 +134,7 @@ def test_tokenize():
             "phrase": name,
         }
 
-    agent = TranslationAgent(Language.English, Translator())
+    agent = TranslationAgent(Language.English, Translator(), False)
     test_map = {
         "What **is** your name?": [
             mk_token(0, "What", 4),
