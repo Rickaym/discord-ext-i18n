@@ -17,7 +17,7 @@ specified objects [here](#fields-covered-by-automatic-translation) into any regi
 depending on the preferences of the channel or guild that the object
 is getting sent to. For instance, if a channel has the preference for Spanish, any text being sent to the channel will be automatically translated into Spanish before it is sent.
 
-Translations carry over formatting as much as possible.
+Translations carry over text formatting.<br><br>
 <img src="./images/example.png"><br>
 _GoogleTranslated string in a different language with formatting maintaing_
 
