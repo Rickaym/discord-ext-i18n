@@ -29,8 +29,9 @@ def test_caching():
 
     for string in test_strings:
         lang = generate_rand_lang()
-        agent = TranslationAgent(lang, translator)
+        agent = TranslationAgent(lang, translator, False)
         agent.cache = SubMimeCache()
+        agent.enable_cache = True
         agent.translate(string)
         assert agent.cache.internal_cache == (
             {

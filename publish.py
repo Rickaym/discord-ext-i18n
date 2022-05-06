@@ -8,6 +8,7 @@ import argparse
 from os import getenv
 from dotenv import load_dotenv
 
+
 def main():
     load_dotenv()
     parser = argparse.ArgumentParser()

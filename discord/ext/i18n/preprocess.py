@@ -173,6 +173,7 @@ class TranslationAgent:
         self.translator = translator
         if enable_cache:
             self.cache.load_cache_sync()
+        self.enable_cache = enable_cache
 
     def translate(self, content: str):
         """
@@ -270,14 +271,14 @@ class TranslationAgent:
 
             if self.dest_lang:
                 cached = None
-                if self.cache:
+                if self.enable_cache:
                     cached = self.cache.get_cache(phrase, self.dest_lang)
 
                 if not cached:
                     cached = self.translator.translate(
                         phrase, dest_lang=self.dest_lang, src_lang=src_lang
                     )
-                    if self.cache:
+                    if self.enable_cache:
                         self.cache.set_cache(phrase, self.dest_lang, cached)
 
                 phrase = cached
