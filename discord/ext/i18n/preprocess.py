@@ -291,12 +291,3 @@ class TranslationAgent:
     @staticmethod
     def clean_string(tokens: List[Dict[str, Any]]):
         return " ".join(tk["phrase"] for tk in tokens)
-
-if __name__ == "__main__":
-    string = """%5h\\_x*"~[(0$g-x^VOHBR8bc"""
-    ag = TranslationAgent(Language.English, Translator())
-    ag.enable_cache = False
-    tks = ag.tokenize(string)
-    print(tks)
-    print(repr(string))
-    print(repr(ag.trans_assemble(string, tks, Language.English)))

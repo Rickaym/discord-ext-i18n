@@ -22,6 +22,10 @@ class Cache:
             await f.aclose()
 
     def load_cache_sync(self):
+        """
+        After the cache object is loaded in sync, it is incumbent on part of
+        the cache users to keep it updated.
+        """
         if not self.sync_loaded:
             self.sync_loaded = True
             if not path.isdir(self.cache_dir):

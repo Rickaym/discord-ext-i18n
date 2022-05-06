@@ -1,9 +1,7 @@
 # Auto Translation Extension for [PyCord](https://github.com/Pycord-Development/pycord)
 
-
 <a href="https://discord.gg/UmnzdPgn6g"><img src="https://img.shields.io/badge/GET SUPPORT-DISCORD-orange?style=for-the-badge&logo=discord&logoColor=white&color=5865F2"></a>
 <a href="https://github.com/Pycord-Development/pycord"><img src="https://img.shields.io/badge/Pycord-%3E%3D2.0.0-orange?style=for-the-badge&logo=python&logoColor=white"></a>
-
 
 ## Key Features
 
@@ -17,9 +15,15 @@ specified objects [here](#fields-covered-by-automatic-translation) into any regi
 depending on the preferences of the channel or guild that the object
 is getting sent to. For instance, if a channel has the preference for Spanish, any text being sent to the channel will be automatically translated into Spanish before it is sent.
 
-Translations carry over text formatting.<br><br>
-<img src="./images/example.png"><br>
-_GoogleTranslated string in a different language with formatting maintaing_
+Translations will carry over markdown!
+
+```diff
++ I've set the language to `English` 🏴󠁧󠁢󠁥󠁮󠁧󠁿!
++ He establecido el idioma en `Spanish` 🇪🇸!
++ ငါဘာသာစကားကိုထားတယ် `မြန်မာ (ဗမာ)` 🇲🇲!
+```
+
+_GoogleTranslated string in a different languages with formatting maintained_
 
 Check out the [FAQ](#features-extended--faq) for more information.
 This extension is relatively new, therefore please report any bugs at [issues](https://github.com/Rickaym/discord-ext-i18n/issues).
