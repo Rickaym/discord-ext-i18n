@@ -140,7 +140,7 @@ def test_tokenize():
     agent = TranslationAgent(Language.English, Translator())
     test_map = {
         "What **is** your name?": [
-            mk_token(0, "What ", 5),
+            mk_token(0, "What", 4),
             mk_token(7, "is", 9),
             mk_token(12, "your name?", 22),
         ],
@@ -148,4 +148,3 @@ def test_tokenize():
     agent.cache = Mock()
     for src, tokenls in test_map.items():
         assert agent.tokenize(src) == tokenls
-

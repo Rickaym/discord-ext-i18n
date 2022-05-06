@@ -1,13 +1,13 @@
 # Auto Translation Extension for [PyCord](https://github.com/Pycord-Development/pycord)
 
 
-<a herf="https://discord.gg/UmnzdPgn6g"><img src="https://img.shields.io/badge/GET SUPPORT-DISCORD-orange?style=for-the-badge&logo=discord&logoColor=white&color=5865F2"></a>
-<a herf="https://github.com/Pycord-Development/pycord"><img src="https://img.shields.io/badge/Pycord-%3E%3D2.0.0-orange?style=for-the-badge&logo=python&logoColor=white"></a>
+<a href="https://discord.gg/UmnzdPgn6g"><img src="https://img.shields.io/badge/GET SUPPORT-DISCORD-orange?style=for-the-badge&logo=discord&logoColor=white&color=5865F2"></a>
+<a href="https://github.com/Pycord-Development/pycord"><img src="https://img.shields.io/badge/Pycord-%3E%3D2.0.0-orange?style=for-the-badge&logo=python&logoColor=white"></a>
 
 
 ## Key Features
 
-- Automatic message, embed, button select langauge translations
+- Automatic message, embed, button select language translations
 - No code changes necessary
 - Fully customizable
 - Forward Compatible

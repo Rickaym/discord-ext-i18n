@@ -1,8 +1,12 @@
-from cgi import print_exception
 import inspect
 
+from traceback import print_exception
 from googletrans import Translator as GoogleTranslator
 from typing import Any, Callable, Dict, List, Optional, Union
+
+import sys
+
+sys.path.append(r"D:\Programming\Python\Projects\disi18n")
 from discord.types.snowflake import Snowflake
 from discord import Message, InteractionResponse
 from discord.abc import Messageable
@@ -11,6 +15,7 @@ from discord.ext.i18n.language import LANG_CODE2NAME, Language
 from string import punctuation, whitespace
 
 punctuation += whitespace
+trailing_punctuation = punctuation.replace("?", "")
 
 
 def isinstancemethod(func: Callable) -> bool:
@@ -200,7 +205,7 @@ class TranslationAgent:
             z_end = a_end = None
             # A token should not start or end with punctuations.
             for a, z in zip(phrase, phrase[::-1]):
-                if z in punctuation and not z_end:
+                if z in trailing_punctuation and not z_end:
                     end -= 1
                 else:
                     z_end = True
@@ -212,7 +217,12 @@ class TranslationAgent:
                     break
 
             phrase = string[start:end]
-            tokens.append({"start_pos": start, "end_pos": end, "phrase": phrase})
+            # Sometimes the phrase becomes nothing because all there is was
+            # illegal punctuations
+            if phrase:
+                tokens.append(
+                    {"start_pos": start, "end_pos": end, "phrase": phrase}
+                )
 
         while i < len(string):
             char = string[i]
@@ -235,98 +245,6 @@ class TranslationAgent:
             if stack and stack[-1]["char"] not in ignored:
                 generate_token()
 
-        return tokens
-
-    @staticmethod
-    def tokenize_legacy(payload: str):
-        """
-        Tokenizing the incoming payload allows us to temporarly fragment all
-        meaningless or decorative characters to smoothen the translation
-        process, afterwards all these fragments are appended back into precise
-        with the most optimal amount of context reserved.
-
-        The general guideline to avoid loss of context from tokenizing is to
-        avoid using markdown where it doesn't convey any meaning when
-        separated.
-
-        I.e. `What **is** your name?`
-        """
-        # An exhaustive list of all characters that marks the beginning
-        # of a phrase that is decorated
-        decoratives = ("`", "*", "_", "<", "\u200b")
-
-        # An unexhaustive dict of all characters that marks the end
-        # of a phrase that is decorated, when not specified, the delimiter is
-        # itself
-        con_decoratives = {"<": ">"}
-
-        # A list of decoratives where the inner text is ignored
-        ignorables = ("<", "\u200b")
-
-        stack, tokens = [], []
-        i = 0
-        while i < len(payload):
-            char = payload[i]
-            if (
-                stack
-                and stack[-1]["char"] == 0
-                and (char == "\n" or char in decoratives or i == len(payload) - 1)
-            ):
-                # At the end of the string and if the characters are sensible
-                # we'll add this and break out
-                if i == len(payload) - 1 and not (char in decoratives or char == "\n"):
-                    i += 1
-                init, end = stack[-1]["pos"], i
-                tokens.append(
-                    {"start_pos": init, "end_pos": end, "phrase": payload[init:end]}
-                )
-                stack.pop(-1)
-
-            if char in decoratives or char in con_decoratives.values():
-                # Upon reaching a decorative, we'll start making a new token
-                # until the same decorative is met
-                i += 1
-                while i < len(payload) and payload[i] in char:
-                    char += payload[i]
-                    i += 1
-
-                if stack and char == con_decoratives.get(
-                    stack[-1]["char"], stack[-1]["char"]
-                ):
-                    init, end = stack[-1]["pos"], i - len(char)
-                    if stack[-1]["char"] not in ignorables:
-                        tokens.append(
-                            {
-                                "start_pos": init,
-                                "end_pos": end,
-                                "phrase": payload[init:end],
-                            }
-                        )
-                    stack.pop(-1)
-                elif char not in con_decoratives.values() and (
-                    not stack or stack[-1]["char"] not in ignorables
-                ):
-                    # The character shouldn't be a delimiter and the last frame
-                    # of the stack must not be an ignorable - in a sense we
-                    # won't insist on making new tokens inside an inconclusive
-                    # ignorable
-                    if char == "```":
-                        while i < len(payload) and payload[i] != "\n":
-                            i += 1
-                        # Add 1 to starting pos to overcome newline char
-                        i += 1
-                    stack.append({"char": char, "pos": i})
-            elif not stack and char.strip():
-                # Phrase frames are appended when the stack is empty and the
-                # char in stream is not a decorative, this is concluded in
-                # reach of any decorative characters - phrase frames have
-                # numeric 0 as their char
-                stack.append({"char": 0, "pos": i})
-            i += 1
-        for tk in tokens:
-            if tk["phrase"].endswith(" "):
-                tk["phrase"] = tk["phrase"][:-1]
-                tk["end_pos"] -= 1
         return tokens
 
     def trans_assemble(
@@ -371,3 +289,12 @@ class TranslationAgent:
     @staticmethod
     def clean_string(tokens: List[Dict[str, Any]]):
         return " ".join(tk["phrase"] for tk in tokens)
+
+if __name__ == "__main__":
+    string = """%5h\\_x*"~[(0$g-x^VOHBR8bc"""
+    ag = TranslationAgent(Language.English, Translator())
+    ag.enable_cache = False
+    tks = ag.tokenize(string)
+    print(tks)
+    print(repr(string))
+    print(repr(ag.trans_assemble(string, tks, Language.English)))

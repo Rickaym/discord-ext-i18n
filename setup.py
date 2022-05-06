@@ -4,22 +4,18 @@ from re import search, MULTILINE
 pkg_name = "i18n"
 prj_path = "discord/ext/{}/".format(pkg_name)
 prj_name = "discord-ext-{}".format(pkg_name)
-descriptors = ("README.md",)
+descriptors = ("./README.md",)
 long_description = ""
 version = ""
 
 with open("{}/__init__.py".format(prj_path)) as fp:
     version = search(
         r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', fp.read(), MULTILINE
-    ).group(1) # type: ignore
+    ).group(1)  # type: ignore
 
 for desc in descriptors:
-    try:
-        with open(desc) as f:
-            long_description += f.read()
-    except FileNotFoundError:
-        pass
-
+    with open(desc) as f:
+        long_description += f.read()
 setup(
     name=prj_name,
     version=version,
@@ -34,7 +30,7 @@ setup(
     license="MIT",
     python_requires=">=3.7",
     packages=[prj_path.replace("/", ".", -1)],
-    install_requires=["py-cord>=2.0.0b"],
+    install_requires=["py-cord>=2.0.0"],
     classifiers=[
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
