@@ -1,5 +1,5 @@
 googletrans==3.1.0a0
-py-cord>=2.0.0
+py-cord==2.0.0b7
 pytest
 anyio
 pytest-asyncio
