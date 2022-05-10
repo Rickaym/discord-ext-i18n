@@ -154,10 +154,14 @@ that it should be translated into, or the destination no preference.
 
 ---
 
-#### TODO
+#### TODO / KNOWN ISSUES
 
 [-] Defer interaction responses only if translation doesn't exist in cache
 
-[-] Resolve the issue with not being able to translate in time for `Modals` plus they can't be deferred
+[-] Resolve the issue with not being able to translate in time for `Modals` and they can't be deferred....
+
+[-] Support translation in Webhooks
+
+[-] More tests
 
 Contributions are absolutely welcome, just create a pull-request and I'll merge them if reasonable.

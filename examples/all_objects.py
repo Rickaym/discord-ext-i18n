@@ -1,6 +1,7 @@
 from typing import Optional
 from discord.ext import commands
 from discord import (
+    ApplicationContext,
     Color,
     Embed,
     Intents,
@@ -17,9 +18,7 @@ intents = Intents.default()
 intents.messages = True
 intents.message_content = True
 
-bot = commands.Bot(
-    command_prefix="!", intents=intents
-)
+bot = commands.Bot(command_prefix="!", intents=intents)
 bot.preferences = {}
 bot.agent = Agent(translate_all=True)
 
@@ -73,7 +72,7 @@ async def greet(ctx):
     await ctx.reply("Hey!!")
 
 
-@slash_command(name="hi")
+@bot.slash_command(name="hi")
 async def slash_greet(ctx):
     await ctx.respond("Hey!!")
 
@@ -81,7 +80,7 @@ async def slash_greet(ctx):
 async def create_embed(channel_id):
     return (
         Embed(
-            title="What is \u200b`discord-ext-i18n`\u200b?",
+            title="What is \u200b`discord-ext-i18n`?",
             description="It is a program that does automatic translations with"
             " no code change necessary for the bot.",
             color=Color.random(),
@@ -96,7 +95,7 @@ async def embed(ctx):
     await ctx.reply(embed=await create_embed(ctx.channel.id))
 
 
-@slash_command(name="embed")
+@bot.slash_command(name="embed")
 async def slash_embed(ctx):
     await ctx.respond(embed=await create_embed(ctx.channel.id))
 
@@ -105,13 +104,13 @@ def create_view():
     v = View()
     v.add_item(Button(label="Yes"))
     v.add_item(Button(label="No"))
-    v.add_item(Button(label="\u200bVery Good"))
+    v.add_item(Button(label="\u200bVery Good"))  # ext won't translate this
     v.add_item(
         Select(
             placeholder="What fruit do humans eat?",
             options=[
                 SelectOption(label="Apple"),
-                SelectOption(label="Orange"),
+                SelectOption(label="\u200bOrange"),  # won't translate this either
                 SelectOption(label="Banana"),
             ],
         )
@@ -124,7 +123,7 @@ async def view(ctx):
     await ctx.reply("Are you a human being?", view=create_view())
 
 
-@slash_command(name="view")
+@bot.slash_command(name="view")
 async def slash_view(ctx):
     await ctx.respond("Are you a human being?", view=create_view())
 
@@ -149,12 +148,7 @@ class MyModal(Modal):
         )
 
 
-@bot.message_command(name="modal")
-async def modal(ctx, msg):
-    await ctx.send_modal(MyModal(title="Input Form"))
-
-
-@slash_command(name="modal")
+@bot.slash_command(name="modal")
 async def slash_modal(ctx):
     await ctx.send_modal(MyModal(title="Input Form"))
 

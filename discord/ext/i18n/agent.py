@@ -1,5 +1,5 @@
 from typing import Any, Callable, Dict, Optional, Union, Coroutine
-from discord import Interaction
+from discord import Interaction, Webhook
 from discord.types.snowflake import Snowflake
 from discord.enums import ComponentType
 from discord.abc import Messageable
@@ -26,6 +26,8 @@ InteractionResponse_send_modal = InteractionResponse.send_modal
 AsyncWebhookAdapter_create_interaction_response = (
     AsyncWebhookAdapter.create_interaction_response
 )
+AsyncWebhookAdapter_execute_webhook = AsyncWebhookAdapter.execute_webhook
+Webhook_send = Webhook.send
 WebhookMessage_edit = WebhookMessage.edit
 
 InterfaceOverridable = Callable[
@@ -84,12 +86,11 @@ def wrap_i18n_sender(send_func: InterfaceOverridable):
     async def wrapped_i18n_send(
         self: Union[Messageable, InteractionResponse], content=None, *_, **kwds
     ):
-        deferred = await try_defer(self)
         dest_lang = await Agent.detector.first_language_of(self)
         if dest_lang:
             content = DetectionAgent.encode_lang_str(content, dest_lang)
-        if deferred:
-            return await self._parent.followup.send(content, **kwds)
+            if await try_defer(self):
+                return await self._parent.followup.send(content, **kwds)
         return await send_func(self, content, **kwds)
 
     return wrapped_i18n_send
@@ -129,6 +130,17 @@ def i18n_Adapter_create_interaction_response(self: AsyncWebhookAdapter, *args, *
     return AsyncWebhookAdapter_create_interaction_response(self, *args, **kwds)
 
 
+def i18n_AsyncWebhookAdapter_execute_webhook(self: AsyncWebhookAdapter, *args, **kwds):
+    if "payload" in kwds and kwds["payload"]:
+        if "content" in kwds["payload"] and kwds["payload"]["content"].strip():
+            content, lang = DetectionAgent.decode_lang_str(kwds["payload"]["content"])
+            if lang:
+                kwds["payload"], kwds["payload"]["content"] = Agent.translate_payload(
+                    lang, kwds["payload"], content
+                )
+    return AsyncWebhookAdapter_execute_webhook(self, *args, **kwds)
+
+
 async def i18n_InteractionResponse_send_modal(self: InteractionResponse, modal: Modal):
     """
     Language code is appended to the modal title if there is a language
@@ -164,22 +176,18 @@ class Agent:
         translate_buttons: Optional[bool] = None,
         translate_selects: Optional[bool] = None,
         translate_modals: Optional[bool] = None,
+        handle_webhooks: bool = True,
     ):
         """
         Sets initialized injectors to override high and low level.
         At any given case, you cannot initialize this class more than
         once.
 
-        Methods Affected methods Includes:
-            - Messegable.send
-            - Message.edit
-            - WebhookMessage.edit
-            - InteractionResponse.send_message
-            - InteractionResponse.edit_message
-            - InteractionResponse.send_modal
-            - HTTPClient.send_message
-            - HTTPClient.edit_message
-            - AsyncWebhookAdapter.create_interaction_response
+        ### Parameters:
+            translate_x = enable translation for x
+
+            handle_webhooks (BETA) = enable webhook translations (this is not a
+            static property and is only settable through params)
         """
         if Agent._instantiated:
             raise TypeError("this class should only be instantiated once")
@@ -191,7 +199,13 @@ class Agent:
             "create_interaction_response",
             i18n_Adapter_create_interaction_response,
         )
-
+        setattr(
+            AsyncWebhookAdapter,
+            "execute_webhook",
+            i18n_AsyncWebhookAdapter_execute_webhook,
+        )
+        if handle_webhooks:
+            setattr(Webhook, "send", wrap_i18n_sender(Webhook_send))
         setattr(Messageable, "send", wrap_i18n_sender(Messageable_send))
         setattr(
             InteractionResponse,
@@ -236,6 +250,8 @@ class Agent:
         """
         Translates a payload JSON object about to be sent to it's corresponding
         discord API Endpoint.
+
+        Returns (Payload, Content)
         """
         agent = TranslationAgent(lang, translator=Agent.translator)
         if Agent.translate_messages:

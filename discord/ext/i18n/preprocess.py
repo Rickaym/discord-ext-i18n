@@ -8,7 +8,7 @@ import sys
 
 sys.path.append(r"D:\Programming\Python\Projects\disi18n")
 from discord.types.snowflake import Snowflake
-from discord import Message, InteractionResponse
+from discord import Message, InteractionResponse, Webhook
 from discord.abc import Messageable
 from discord.ext.i18n.cache import Cache
 from discord.ext.i18n.language import LANG_CODE2NAME, Language
@@ -37,7 +37,7 @@ class Detector:
         return obj
 
     async def first_language_of(
-        self, ctx: Union[Message, InteractionResponse, Messageable]
+        self, ctx: Union[Message, InteractionResponse, Messageable, Webhook]
     ):
         """
         Resolves the most precedent destination language from a context object.
@@ -56,6 +56,9 @@ class Detector:
                 guild_id = ch.guild.id  # type: ignore
             except AttributeError:
                 guild_id = None
+        elif isinstance(ctx, Webhook):
+            channel_id = ctx.channel_id
+            guild_id = ctx.guild_id
         else:
             if ctx._parent.message and ctx._parent.message.guild:
                 author_id = ctx._parent.message.author.id
