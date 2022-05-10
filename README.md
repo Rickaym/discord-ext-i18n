@@ -37,7 +37,8 @@ This extension is relatively new, therefore please report any bugs at [issues](h
 - `Embeds`
 - `Buttons`
 - `Selects`
-- `Modals` (buggy)
+- `Modals` (beta)
+- `Webhooks` (beta)
 
 ## Installing
 
