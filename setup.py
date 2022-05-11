@@ -31,7 +31,7 @@ setup(
     license="MIT",
     python_requires=">=3.7",
     packages=[prj_path.replace("/", ".", -1)],
-    install_requires=["py-cord>=2.0.0"],
+    install_requires=["py-cord>=2.0.0b5", "googletrans==3.1.0a0"],
     classifiers=[
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
