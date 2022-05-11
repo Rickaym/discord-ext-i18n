@@ -19,6 +19,9 @@ from utils import generate_string_tuple, MimeTranslator, generate_long_num
 from random import choice
 
 
+# Test on string "```py\ndiscord-ext-i18n```"
+
+
 def m_obj(base=object, **kwds):
     """
     Creates an object with the desired base and worksaround the parent class's

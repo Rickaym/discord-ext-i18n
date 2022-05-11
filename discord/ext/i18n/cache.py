@@ -29,12 +29,16 @@ class Cache:
         if not self.sync_loaded:
             self.sync_loaded = True
             if not path.isdir(self.cache_dir):
+                self.internal_cache = {}
                 if mkdir(self.cache_dir) == 1:
                     raise ValueError(
                         f"Could not make a cache folder at {self.cache_dir}"
                     )
-            with open(self.cache_pth, mode="r", encoding="utf-8") as f:
-                self.internal_cache = json.load(f)
+                else:
+                    open(self.cache_pth, mode=("w"), encoding="utf-8").close()
+            else:
+                with open(self.cache_pth, mode="r", encoding="utf-8") as f:
+                    self.internal_cache = json.load(f)
 
     async def save_cache(self):
         f = await anyio.open_file(self.cache_pth, mode="w", encoding="utf-8")

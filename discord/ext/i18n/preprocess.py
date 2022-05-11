@@ -7,10 +7,10 @@ from discord.types.snowflake import Snowflake
 from discord import Message, InteractionResponse, Webhook
 from discord.abc import Messageable
 from discord.ext.i18n.cache import Cache
-from discord.ext.i18n.language import Language
-from string import punctuation, whitespace
+from discord.ext.i18n.language import CODEBLOCK_LANGS, Language
+from string import ascii_letters, punctuation, whitespace
 
-punctuation += whitespace
+punctuation += f"{whitespace}\u200b"
 trailing_punctuation = punctuation.replace("?", "")
 
 
@@ -128,7 +128,23 @@ class Translator:
 
 
 class TranslationAgent:
-    decoratives = {"`": "`", "*": "*", "_": "_", "<": ">", "(": ")", "\u200b": "\u200b"}
+    decoratives = {
+        "`": "`",
+        "```": "```",
+        "*": "*",
+        "_": "_",
+        "<@": ">",
+        "<#": ">",
+        "<@&": ">",
+        "<!@": ">",
+        "<:": ">",
+        "(": ")",
+        "\u200b": "\u200b",
+    }
+    # Add all possible entries codeblock starters
+    decoratives.update({f"```{lang}\n": "```" for lang in CODEBLOCK_LANGS})
+
+    ignored = {"<@", "<#", "<@&", "<!@", "<:", "\u200b"}
     cache = Cache()
 
     def __init__(
@@ -154,21 +170,28 @@ class TranslationAgent:
         return cached
 
     @staticmethod
+    def similar_decors(char: str):
+        return list(
+            filter(
+                lambda decor: decor.startswith(char),
+                TranslationAgent.decoratives
+                )
+            )
+
+    @staticmethod
     def tokenize(string: str):
         stoppage = {"\n"}
-        ignored = {">": "<", "\u200b": "\u200b"}
-        stack, tokens = [], []
 
+        stack, tokens = [], []
         i = 0
 
-        def generate_token(encounter: str = ""):
+        def generate_token():
             """
             encouter: a decorative that invoked token generation
             """
             if not stack:
                 return
-            if encounter in ignored and stack[-1]["char"] == ignored[encounter]:
-                return
+
             last_char = stack.pop(-1)
             start, end = last_char["pos"], i
 
@@ -192,28 +215,58 @@ class TranslationAgent:
                     break
 
             phrase = string[start:end]
-            # Sometimes the phrase becomes nothing because all there is was
-            # illegal punctuations
             if phrase:
-                tokens.append({"start_pos": start, "end_pos": end, "phrase": phrase})
+                tokens.append(
+                    {"start_pos": start, "end_pos": end, "phrase": phrase}
+                    )
 
-        while i < len(string):
+        string_len = len(string)
+        while i < string_len:
             char = string[i]
-            if char in stoppage:
-                generate_token()
+
+            if char not in ascii_letters:
+                tmp_char = char
+                tmp_pos = int(i)
+                sample = TranslationAgent.similar_decors(char)
+                while sample and i+1 != string_len:
+                    i += 1
+                    char += string[i]
+                    sample = TranslationAgent.similar_decors(char)
+
+                # loop oversteps one character if not EOF
+                if i+1 != string_len:
+                    char = char[:-1]
+                    i -= 1
+
+                if char not in TranslationAgent.decoratives:
+                    char = tmp_char
+                    i = tmp_pos
+
+            char_pos = i
+            if stack and stack[-1]["char"] in TranslationAgent.ignored:
+                # Busy the loop as long as an ignored stack character
+                # has not met it's end
+                if char == TranslationAgent.decoratives[stack[-1]["char"]]:
+                    stack.pop()
+            elif char in stoppage:
+                if stack and stack[-1]["char"] not in TranslationAgent.decoratives:
+                    generate_token()
             elif (
                 char in TranslationAgent.decoratives
                 or char in TranslationAgent.decoratives.values()
             ):
-                generate_token(char)
-                stack.append({"char": char, "pos": i + 1})
+                generate_token()
+                # post is incremented by one since when making a token
+                # we expect the starting position from one after the
+                # decorative
+                stack.append({"char": char, "pos": char_pos+1})
             elif not stack and char.strip():
                 # stack is empty = start a new token
-                stack.append({"char": char, "pos": i})
+                stack.append({"char": char, "pos": char_pos})
             i += 1
-        else:
-            if stack:
-                generate_token(stack[-1]["char"])
+
+        if stack:
+            generate_token()
 
         return tokens
 
@@ -254,7 +307,3 @@ class TranslationAgent:
     @staticmethod
     def clean_string(tokens: List[Dict[str, Any]]):
         return " ".join(tk["phrase"] for tk in tokens)
-
-
-if __name__ == "__main__":
-    print(TranslationAgent.tokenize("What is `\u200bdiscord-ext-i18n\u200b`?"))
