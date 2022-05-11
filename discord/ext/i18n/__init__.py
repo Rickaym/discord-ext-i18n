@@ -1,5 +1,5 @@
 # This page is left intentionally blank
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 
 from .agent import *
 from .preprocess import *

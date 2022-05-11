@@ -3,15 +3,11 @@ import inspect
 from traceback import print_exception
 from googletrans import Translator as GoogleTranslator
 from typing import Any, Callable, Dict, List, Optional, Union
-
-import sys
-
-sys.path.append(r"D:\Programming\Python\Projects\disi18n")
 from discord.types.snowflake import Snowflake
 from discord import Message, InteractionResponse, Webhook
 from discord.abc import Messageable
 from discord.ext.i18n.cache import Cache
-from discord.ext.i18n.language import LANG_CODE2NAME, Language
+from discord.ext.i18n.language import Language
 from string import punctuation, whitespace
 
 punctuation += whitespace
@@ -93,37 +89,6 @@ class Detector:
         return fn
 
 
-class DetectionAgent:
-    delim = "\u200b"
-
-    @staticmethod
-    def encode_lang_str(s: str, lang: Language):
-        """
-        Append the language code into the string with a delimiter.
-        """
-        if not s:
-            return f"{DetectionAgent.delim}{lang.code}"
-
-        detection = Translator.antecedent.detect(s)
-        if lang.code != detection.lang:
-            return f"{s}{DetectionAgent.delim}{lang.code}"
-        else:
-            return s
-
-    @staticmethod
-    def decode_lang_str(s: str):
-        """
-        Extract the language code from a string if it exists.
-        """
-        *content, lang_id = s.split(DetectionAgent.delim)
-        if lang_id not in LANG_CODE2NAME.keys():
-            return s, None
-        else:
-            return DetectionAgent.delim.join(content) or None, Language.from_code(
-                lang_id
-            )
-
-
 class Translator:
     antecedent = GoogleTranslator()
     suppress_errors = True
@@ -136,10 +101,7 @@ class Translator:
         """
 
     def batch_translate(
-        self,
-        payloads: List[str],
-        dest_lang: Language,
-        src_lang: Language
+        self, payloads: List[str], dest_lang: Language, src_lang: Language
     ):
         """
         Batch translates text from source language to destination language.
@@ -170,9 +132,14 @@ class TranslationAgent:
     cache = Cache()
 
     def __init__(
-        self, dest_lang: Language, translator: Translator, enable_cache: bool = True
+        self,
+        src_lang: Language,
+        dest_lang: Language,
+        translator: Translator,
+        enable_cache: bool = True,
     ) -> None:
         self.dest_lang = dest_lang
+        self.src_lang = src_lang
         self.translator = translator
         if enable_cache:
             self.cache.load_cache_sync()
@@ -198,6 +165,8 @@ class TranslationAgent:
             """
             encouter: a decorative that invoked token generation
             """
+            if not stack:
+                return
             if encounter in ignored and stack[-1]["char"] == ignored[encounter]:
                 return
             last_char = stack.pop(-1)
@@ -214,6 +183,7 @@ class TranslationAgent:
                     end -= 1
                 else:
                     z_end = True
+
                 if a in punctuation and not a_end:
                     start += 1
                 else:
@@ -225,39 +195,29 @@ class TranslationAgent:
             # Sometimes the phrase becomes nothing because all there is was
             # illegal punctuations
             if phrase:
-                tokens.append(
-                    {"start_pos": start, "end_pos": end, "phrase": phrase}
-                )
+                tokens.append({"start_pos": start, "end_pos": end, "phrase": phrase})
 
         while i < len(string):
             char = string[i]
             if char in stoppage:
-                if stack:
-                    generate_token()
+                generate_token()
             elif (
                 char in TranslationAgent.decoratives
                 or char in TranslationAgent.decoratives.values()
             ):
-                if stack:
-                    generate_token(char)
+                generate_token(char)
                 stack.append({"char": char, "pos": i + 1})
             elif not stack and char.strip():
                 # stack is empty = start a new token
                 stack.append({"char": char, "pos": i})
             i += 1
         else:
-            # token starter left in stack
-            if stack and stack[-1]["char"] not in ignored:
-                generate_token()
+            if stack:
+                generate_token(stack[-1]["char"])
 
         return tokens
 
-    def trans_assemble(
-        self,
-        payload: str,
-        tokens: List[Dict[str, Any]],
-        src_lang: Language = Language.English,
-    ):
+    def trans_assemble(self, payload: str, tokens: List[Dict[str, Any]]):
         """
         Re-assembles the tokens into a new string translated to the destination
         language.
@@ -279,14 +239,14 @@ class TranslationAgent:
 
                 if not cached:
                     cached = self.translator.translate(
-                        phrase, dest_lang=self.dest_lang, src_lang=src_lang
+                        phrase, dest_lang=self.dest_lang, src_lang=self.src_lang
                     )
                     if self.enable_cache:
                         self.cache.set_cache(phrase, self.dest_lang, cached)
 
                 phrase = cached
 
-            new_str[tk["start_pos"] + mitigate: tk["end_pos"] + mitigate] = phrase
+            new_str[tk["start_pos"] + mitigate : tk["end_pos"] + mitigate] = phrase
             if tk["end_pos"] - tk["start_pos"] != len(phrase):
                 mitigate += len(phrase) - (tk["end_pos"] - tk["start_pos"])
         return "".join(new_str)
@@ -294,3 +254,7 @@ class TranslationAgent:
     @staticmethod
     def clean_string(tokens: List[Dict[str, Any]]):
         return " ".join(tk["phrase"] for tk in tokens)
+
+
+if __name__ == "__main__":
+    print(TranslationAgent.tokenize("What is `\u200bdiscord-ext-i18n\u200b`?"))

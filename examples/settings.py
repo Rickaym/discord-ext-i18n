@@ -24,7 +24,7 @@ bot.agent = Agent(
 )
 
 # You may also change these flags outside like below by setting it to the class
-# NOT INSTANCES as these flags are universal.
+# NOT INSTANCES as these flags are static
 Agent.translate_buttons = False
 Agent.translate_embeds = False
 
@@ -39,10 +39,13 @@ async def set_lang(ctx, lang_code):
     lang = Language.from_code(lang_code)
     if lang is None:
         return await ctx.reply("Bad language code!")
+    elif lang is Language.English:
+        if ctx.channel.id in bot.preferences:
+            bot.preferences.pop(ctx.channel.id)
     else:
-        # Set a language preference to the current channel.
         bot.preferences[ctx.channel.id] = lang
-        await ctx.reply(f"I've set the language to `{lang.name.title()}` {lang.emoji}!")
+
+    await ctx.reply(f"I've set the language to `{lang.name.title()}` {lang.emoji}!")
 
 
 @bot.command(name="set")

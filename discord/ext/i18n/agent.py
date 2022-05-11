@@ -7,9 +7,8 @@ from discord.message import Message
 from discord.http import HTTPClient
 from discord.interactions import InteractionResponse
 from discord.webhook.async_ import AsyncWebhookAdapter, WebhookMessage
-from discord.ext.i18n.language import Language
+from discord.ext.i18n.language import LANG_CODE2NAME, Language
 from discord.ext.i18n.preprocess import (
-    DetectionAgent,
     Detector,
     TranslationAgent,
     Translator,
@@ -52,7 +51,7 @@ def wrap_i18n_editer(edit_func: InterfaceOverridable):
     async def wrapped_i18n_edit(self: Union[Message, InteractionResponse], **kwds):
         dest_lang = await Agent.detector.first_language_of(self)
         if dest_lang:
-            kwds["content"] = DetectionAgent.encode_lang_str(
+            kwds["content"] = Agent.encode_lang_str(
                 kwds.get("content", None) or "", dest_lang
             )
         return await edit_func(self, **kwds)
@@ -71,7 +70,7 @@ def i18n_HTTPClient_edit_message(
     with a guild.
     """
     if fields["content"]:
-        content, lang = DetectionAgent.decode_lang_str(fields["content"])
+        content, lang = Agent.decode_lang_str(fields["content"])
         if lang:
             fields, fields["content"] = Agent.translate_payload(lang, fields, content)
     return HTTPClient_edit_message(self, channel_id, message_id, **fields)
@@ -88,7 +87,7 @@ def wrap_i18n_sender(send_func: InterfaceOverridable):
     ):
         dest_lang = await Agent.detector.first_language_of(self)
         if dest_lang:
-            content = DetectionAgent.encode_lang_str(content, dest_lang)
+            content = Agent.encode_lang_str(content, dest_lang)
             if await try_defer(self):
                 return await self._parent.followup.send(content, **kwds)
         return await send_func(self, content, **kwds)
@@ -108,7 +107,7 @@ def i18n_HTTPClient_send_message(
     and performs translation.
     """
     if content:
-        payload, lang = DetectionAgent.decode_lang_str(content)
+        payload, lang = Agent.decode_lang_str(content)
         if lang:
             kwds, content = Agent.translate_payload(lang, kwds, payload)
     return HTTPClient_send_message(self, channel_id, content, **kwds)
@@ -121,7 +120,7 @@ def i18n_Adapter_create_interaction_response(self: AsyncWebhookAdapter, *args, *
     """
     if kwds["data"] and ("content" in kwds["data"] or "title" in kwds["data"]):
         content_type = "content" if "content" in kwds["data"] else "title"
-        content, lang = DetectionAgent.decode_lang_str(kwds["data"][content_type])
+        content, lang = Agent.decode_lang_str(kwds["data"][content_type])
 
         if lang:
             kwds["data"], kwds["data"][content_type] = Agent.translate_payload(
@@ -133,7 +132,7 @@ def i18n_Adapter_create_interaction_response(self: AsyncWebhookAdapter, *args, *
 def i18n_AsyncWebhookAdapter_execute_webhook(self: AsyncWebhookAdapter, *args, **kwds):
     if "payload" in kwds and kwds["payload"]:
         if "content" in kwds["payload"] and kwds["payload"]["content"].strip():
-            content, lang = DetectionAgent.decode_lang_str(kwds["payload"]["content"])
+            content, lang = Agent.decode_lang_str(kwds["payload"]["content"])
             if lang:
                 kwds["payload"], kwds["payload"]["content"] = Agent.translate_payload(
                     lang, kwds["payload"], content
@@ -151,7 +150,7 @@ async def i18n_InteractionResponse_send_modal(self: InteractionResponse, modal: 
     """
     dest_lang = await Agent.detector.first_language_of(self)
     if dest_lang:
-        modal.title = DetectionAgent.encode_lang_str(modal.title, dest_lang)
+        modal.title = Agent.encode_lang_str(modal.title, dest_lang)
     return await InteractionResponse_send_modal(self, modal)
 
 
@@ -159,11 +158,13 @@ class Agent:
     translator = Translator()
     detector = Detector()
 
+    delim = "\u200b"
     translate_messages = True
     translate_embeds = False
     translate_buttons = False
     translate_selects = False
     translate_modals = False
+    source_lang = Language.English
     _instantiated = False
 
     def __init__(
@@ -176,6 +177,7 @@ class Agent:
         translate_buttons: Optional[bool] = None,
         translate_selects: Optional[bool] = None,
         translate_modals: Optional[bool] = None,
+        source_lang: Optional[Language] = None,
         handle_webhooks: bool = True,
     ):
         """
@@ -185,8 +187,10 @@ class Agent:
 
         ### Parameters:
             translate_x = enable translation for x
-
-            handle_webhooks (BETA) = enable webhook translations (this is not a
+                defaults to: True for `translate_messages` and False for else
+            source_lang = the language in which text is written in the bot
+                defaults to: `Language.English`
+            handle_webhooks = enable webhook translations (this is not a
             static property and is only settable through params)
         """
         if Agent._instantiated:
@@ -231,6 +235,7 @@ class Agent:
             "translate_buttons": translate_buttons,
             "translate_selects": translate_selects,
             "translate_modals": translate_modals,
+            "source_lang": source_lang,
         }.items():
             if translate_all and key.startswith("translate_"):
                 setattr(Agent, key, True)
@@ -253,7 +258,7 @@ class Agent:
 
         Returns (Payload, Content)
         """
-        agent = TranslationAgent(lang, translator=Agent.translator)
+        agent = TranslationAgent(Agent.source_lang, lang, translator=Agent.translator)
         if Agent.translate_messages:
             if content:
                 content = agent.translate(content)
@@ -264,7 +269,7 @@ class Agent:
             else:
                 embeds = []
 
-            if "embed" in payload:
+            if "embed" in payload and payload["embed"]:
                 embeds.append(payload["embed"])
 
             for i, template_embed in enumerate(embeds):
@@ -351,3 +356,28 @@ class Agent:
                     payload["components"][i] = row
 
         return payload, content
+
+    @staticmethod
+    def encode_lang_str(s: str, lang: Language):
+        """
+        Append the language code into the string with a delimiter.
+        """
+        same_lang = False
+        if s:
+            same_lang = Translator.antecedent.detect(s).lang == lang.code
+
+        if not same_lang and lang is not Agent.source_lang:
+            return f"{s or ''}{Agent.delim}{lang.code}"
+        else:
+            return s
+
+    @staticmethod
+    def decode_lang_str(s: str):
+        """
+        Extract the language code from a string if it exists.
+        """
+        *content, lang_id = s.split(Agent.delim)
+        if lang_id not in LANG_CODE2NAME.keys():
+            return s, None
+        else:
+            return Agent.delim.join(content) or None, Language.from_code(lang_id)

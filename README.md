@@ -16,7 +16,6 @@ specified objects [here](#fields-covered-by-automatic-translation) into any regi
 depending on the preferences of the channel or guild that the object
 is getting sent to. For instance, if a channel has the preference for Spanish, any messages, embeds etc.. that are being sent to the channel will be automatically translated into Spanish before it is sent.
 
-
 Translations will carry over markdown!
 
 ```diff
@@ -27,7 +26,7 @@ Translations will carry over markdown!
 
 _GoogleTranslated string in different languages with formatting maintained_
 
-Check out the [FAQ](#features-extended--faq) for more information.
+Check out the [FAQ](#features-extended--faq) and [Examples](#Examples) for more information.
 This extension is relatively new, therefore please report any bugs at [issues](https://github.com/Rickaym/discord-ext-i18n/issues).
 
 ## Fields Covered by Automatic Translation
@@ -111,6 +110,15 @@ async def greet(ctx):
 
 bot.run("TOKEN")
 ```
+
+## Examples
+
+1. [Get Started](https://github.com/Rickaym/discord-ext-i18n/blob/master/examples/get_started.py) - A minimal example on how to get started with the extension.
+2. [Cog Example](https://github.com/Rickaym/discord-ext-i18n/blob/master/examples/cog_example.py) - Get started but inside a cog.
+3. [Customized](https://github.com/Rickaym/discord-ext-i18n/blob/master/examples/customized.py) - An example on how to customize/make your own translator and override the default one.
+4. [Settings](https://github.com/Rickaym/discord-ext-i18n/blob/master/examples/settings.py) - An example on how to enable/disable the extension from translating certain fields
+5. [Optimized](https://github.com/Rickaym/discord-ext-i18n/blob/master/examples/optimized.py) - An example on how to ignore translation on parts of a string that is prone to change
+6. [All Objects](https://github.com/Rickaym/discord-ext-i18n/blob/master/examples/all_objects.py) - A summary example of every object that is affected by translation + all features discussed prior
 
 ## Features Extended & FAQ
 

@@ -1,5 +1,6 @@
 from discord.ext.i18n.preprocess import TranslationAgent
 from discord.ext.i18n.cache import Cache
+from discord.ext.i18n.language import Language
 from tests.utils import (
     generate_string_tuple,
     generate_rand_lang,
@@ -29,7 +30,7 @@ def test_caching():
 
     for string in test_strings:
         lang = generate_rand_lang()
-        agent = TranslationAgent(lang, translator, False)
+        agent = TranslationAgent(Language.English, lang, translator, False)
         agent.cache = SubMimeCache()
         agent.enable_cache = True
         agent.translate(string)

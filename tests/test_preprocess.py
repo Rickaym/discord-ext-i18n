@@ -15,7 +15,6 @@ from discord import (
     Message,
     TextChannel,
 )
-from tests.utils import MimeCache
 from utils import generate_string_tuple, MimeTranslator, generate_long_num
 from random import choice
 
@@ -57,7 +56,7 @@ def test_assembly():
     """
     test_strings = generate_string_tuple(30, 10, 50)
     mime = MimeTranslator()
-    agent = TranslationAgent(Language.English, mime, False)
+    agent = TranslationAgent(Language.English, Language.English, mime, False)
     for string in test_strings:
         assert string == agent.trans_assemble(string, agent.tokenize(string))
 
@@ -67,7 +66,7 @@ def test_translation_attempt():
     Test whether if the translate method is properly put to use.
     """
     test_strings = generate_string_tuple(30, 10, 50)
-    agent = TranslationAgent(Language.Swahili, MimeTranslator(), False)
+    agent = TranslationAgent(Language.English, Language.Swahili, MimeTranslator(), False)
     for string in test_strings:
         assert agent.translate(string) == agent.trans_assemble(
             string, agent.tokenize(string)
@@ -134,7 +133,7 @@ def test_tokenize():
             "phrase": name,
         }
 
-    agent = TranslationAgent(Language.English, Translator(), False)
+    agent = TranslationAgent(Language.English, Language.English, Translator(), False)
     test_map = {
         "What **is** your name?": [
             mk_token(0, "What", 4),

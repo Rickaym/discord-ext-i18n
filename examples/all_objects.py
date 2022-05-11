@@ -1,14 +1,15 @@
 from typing import Optional
 from discord.ext import commands
 from discord import (
-    ApplicationContext,
     Color,
     Embed,
     Intents,
+    Interaction,
     SelectOption,
-    slash_command,
 )
 from random import randint
+
+from functools import partial
 from discord.ext.i18n import Agent, Language, Detector
 from discord.enums import InputTextStyle
 from discord.ui import View, Button, Modal, Select
@@ -33,9 +34,13 @@ async def set_lang(ctx, lang_code):
     lang = Language.from_code(lang_code)
     if lang is None:
         return await ctx.reply("Bad language code!")
+    elif lang is Language.English:
+        if ctx.channel.id in bot.preferences:
+            bot.preferences.pop(ctx.channel.id)
     else:
         bot.preferences[ctx.channel.id] = lang
-        await ctx.reply(f"I've set the language to `{lang.name.title()}` {lang.emoji}!")
+
+    await ctx.reply(f"I've set the language to `{lang.name.title()}` {lang.emoji}!")
 
 
 @bot.command(name="set")
@@ -80,7 +85,7 @@ async def slash_greet(ctx):
 async def create_embed(channel_id):
     return (
         Embed(
-            title="What is \u200b`discord-ext-i18n`?",
+            title="What is `\u200bdiscord-ext-i18n\u200b`?",
             description="It is a program that does automatic translations with"
             " no code change necessary for the bot.",
             color=Color.random(),
@@ -100,11 +105,31 @@ async def slash_embed(ctx):
     await ctx.respond(embed=await create_embed(ctx.channel.id))
 
 
+@bot.command(name="embeds")
+async def embeds(ctx):
+    await ctx.reply(
+        embeds=[await create_embed(ctx.channel.id), await create_embed(ctx.channel.id)]
+    )
+
+
+@bot.slash_command(name="embeds")
+async def slash_embeds(ctx):
+    await ctx.respond(
+        embeds=[await create_embed(ctx.channel.id), await create_embed(ctx.channel.id)]
+    )
+
+
 def create_view():
     v = View()
-    v.add_item(Button(label="Yes"))
-    v.add_item(Button(label="No"))
-    v.add_item(Button(label="\u200bVery Good"))  # ext won't translate this
+
+    async def butt_callback(self: Button, int: Interaction):
+        await int.response.send_message(self.label)
+
+    buttons = [Button(label="Yes"), Button(label="No"), Button(label="\u200bVery Good")]
+    for butt in buttons:
+        butt.callback = partial(butt_callback, butt)
+        v.add_item(butt)
+
     v.add_item(
         Select(
             placeholder="What fruit do humans eat?",
