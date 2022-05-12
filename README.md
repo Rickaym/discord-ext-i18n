@@ -57,7 +57,7 @@ py -3 -m pip install -U discord-ext-i18n
 
 **Required Steps**:
 
-- Define a language getter function decorated with the `Detector.language_getter` decorator
+- Define a language getter function decorated with the `Detector.lang_getter` decorator
   (this getter is called with an ID of _guilds / channels_ to see if it has a
   language preference)
 - Instantiate a `discord.ext.i18n.Agent` class to configure and inject code
