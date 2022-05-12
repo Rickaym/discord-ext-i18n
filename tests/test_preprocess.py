@@ -153,9 +153,9 @@ def test_tokenize_phrases():
         "\u200b```diff\n- TIME TO STOP\n```":
             ["Insiders", "fighting for insiders"],
         "```js\n- What does it **mean** to be?```\n"
-        "\u200bAnd how does it \u200baffect you? <@368671236370464769> "
+        "\u200bAnd how does it \u200b**`affect you`**? <@368671236370464769> "
         "<:smile:123> \u200bif i may say so.":
-            ["What does it", "mean", "to be?", "affect you?"],
+            ["What does it", "mean", "to be?", "affect you"],
     }
     agent.cache = Mock()
     for src, tokenls in test_map.items():

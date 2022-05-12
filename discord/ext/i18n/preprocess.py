@@ -132,6 +132,7 @@ class TranslationAgent:
         "`": "`",
         "```": "```",
         "*": "*",
+        "**": "**",
         "_": "_",
         "<@": ">",
         "<#": ">",
@@ -172,18 +173,28 @@ class TranslationAgent:
     @staticmethod
     def similar_decors(char: str):
         return list(
-            filter(
-                lambda decor: decor.startswith(char),
-                TranslationAgent.decoratives
-                )
-            )
+            filter(lambda decor: decor.startswith(char), TranslationAgent.decoratives)
+        )
 
     @staticmethod
     def tokenize(string: str):
+        """
+        Create "tokens" from a general string.
+
+        The process of tokenization is limited to single iteration of
+        the string in one single flow. The tokenizer will
+        add any substantive character into the stack if the stack is empty.
+        When it meets any decoratives, it will conclude the token there
+        thus removing the initial character from the stack, and then
+        adding on the new decorative in. Each decorative has another decorative
+        that concludes it. I.e. if we start a string with '**', we won't make a
+        new token unless there are more decoratives nested or we find an instance
+        of '**' again.
+        """
         stack, tokens = [], []
         i = 0
 
-        def generate_token(end_char: str=""):
+        def generate_token(end_char: str = ""):
             """
             encouter: a decorative that invoked token generation
             """
@@ -192,7 +203,6 @@ class TranslationAgent:
 
             last_char = stack.pop(-1)
             start, end = last_char["pos"], i
-
             if end_char in TranslationAgent.decoratives:
                 # tokens generated when a starting decorative is
                 # hit needs to remove it's end number from consuming the
@@ -220,9 +230,7 @@ class TranslationAgent:
 
             phrase = string[start:end]
             if phrase:
-                tokens.append(
-                    {"start_pos": start, "end_pos": end, "phrase": phrase}
-                    )
+                tokens.append({"start_pos": start, "end_pos": end, "phrase": phrase})
 
         string_len = len(string)
         while i < string_len:
@@ -232,13 +240,13 @@ class TranslationAgent:
                 tmp_char = char
                 tmp_pos = int(i)
                 sample = TranslationAgent.similar_decors(char)
-                while sample and i+1 != string_len:
+                while sample and i + 1 != string_len:
                     i += 1
                     char += string[i]
                     sample = TranslationAgent.similar_decors(char)
 
                 # loop oversteps one character if not EOF
-                if i+1 != string_len:
+                if i + 1 != string_len:
                     char = char[:-1]
                     i -= 1
 
@@ -260,7 +268,7 @@ class TranslationAgent:
                 # post is incremented by one since when making a token
                 # we expect the starting position from one after the
                 # decorative
-                stack.append({"char": char, "pos": char_pos+1})
+                stack.append({"char": char, "pos": char_pos + 1})
             elif not stack and char.strip():
                 # stack is empty = start a new token
                 stack.append({"char": char, "pos": char_pos})
