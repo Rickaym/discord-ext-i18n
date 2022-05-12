@@ -20,7 +20,7 @@ for desc in descriptors:
 setup(
     name=prj_name,
     version=version,
-    description="A extension supporting fully automated i18j translations for bot interface.",
+    description="A Pycord extension to support automatic text translations in 107 languages.",
     author="Rickaym",
     long_description=long_description,
     long_description_content_type="text/markdown",

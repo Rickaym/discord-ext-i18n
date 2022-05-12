@@ -41,7 +41,7 @@ This extension is relatively new, therefore please report any bugs at [issues](h
 
 ## Installing
 
-This is an extension for `PyCord`. It is recommended that there exists an installation of `py-cord>=2.0.0`.
+This is an extension for `PyCord`. It is recommended that there exists an installation of `py-cord>=2.0.0b5`.
 
 To install this extension, run the following command:
 
