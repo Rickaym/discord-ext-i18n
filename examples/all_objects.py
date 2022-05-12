@@ -10,10 +10,12 @@ from discord import (
 from random import randint
 
 from functools import partial
-from discord.ext.i18n import Agent, Language, Detector
+from discord.ext.i18n import Agent, Language, Detector, AgentSession
 from discord.enums import InputTextStyle
 from discord.ui import View, Button, Modal, Select
 from discord.ui.input_text import InputText
+
+from discord.ext.i18n.preprocess import TranslationAgent
 
 intents = Intents.default()
 intents.messages = True
@@ -177,5 +179,15 @@ class MyModal(Modal):
 async def slash_modal(ctx):
     await ctx.send_modal(MyModal(title="Input Form"))
 
+
+@bot.command(name="selective")
+async def selective(ctx):
+    with AgentSession(translate_embeds=False):
+        await ctx.reply(
+            embed=Embed(
+                title="Theoretical Physics",
+                description="This description will never be translated.",
+            )
+        )
 
 bot.run("TOKEN")

@@ -13,7 +13,9 @@ bot = commands.Bot(
     intents=intents,
 )
 bot.preferences = {}
-bot.agent = Agent(translate_all=True)  # This must be instantiated at least and only once
+bot.agent = Agent(
+    translate_all=True
+)  # This must be instantiated at least and only once
 
 
 @Detector.lang_getter

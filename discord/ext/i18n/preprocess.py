@@ -180,12 +180,10 @@ class TranslationAgent:
 
     @staticmethod
     def tokenize(string: str):
-        stoppage = {"\n"}
-
         stack, tokens = [], []
         i = 0
 
-        def generate_token():
+        def generate_token(end_char: str=""):
             """
             encouter: a decorative that invoked token generation
             """
@@ -194,6 +192,12 @@ class TranslationAgent:
 
             last_char = stack.pop(-1)
             start, end = last_char["pos"], i
+
+            if end_char in TranslationAgent.decoratives:
+                # tokens generated when a starting decorative is
+                # hit needs to remove it's end number from consuming the
+                # decorative
+                end -= len(end_char) - 1
 
             phrase = string[start:end]
             if not phrase.strip():
@@ -248,14 +252,11 @@ class TranslationAgent:
                 # has not met it's end
                 if char == TranslationAgent.decoratives[stack[-1]["char"]]:
                     stack.pop()
-            elif char in stoppage:
-                if stack and stack[-1]["char"] not in TranslationAgent.decoratives:
-                    generate_token()
             elif (
                 char in TranslationAgent.decoratives
                 or char in TranslationAgent.decoratives.values()
             ):
-                generate_token()
+                generate_token(char)
                 # post is incremented by one since when making a token
                 # we expect the starting position from one after the
                 # decorative
@@ -265,7 +266,7 @@ class TranslationAgent:
                 stack.append({"char": char, "pos": char_pos})
             i += 1
 
-        if stack:
+        if stack and stack[-1]["char"] not in TranslationAgent.ignored:
             generate_token()
 
         return tokens

@@ -52,7 +52,7 @@ def m_obj(base=object, **kwds):
     return Mime()
 
 
-def test_assembly():
+def test_token_assembly():
     """
     Test whether if tokenizing and reassembling strings is
     correct.
@@ -128,22 +128,35 @@ async def test_detection():
         assert await agent.first_language_of(obj) is item[1]
 
 
-def test_tokenize():
-    def mk_token(start, name, end):
-        return {
-            "start_pos": start,
-            "end_pos": end,
-            "phrase": name,
-        }
-
-    agent = TranslationAgent(Language.English, Language.English, Translator(), False)
+def test_tokenize_phrases():
+    agent = TranslationAgent(
+        Language.English, Language.English, Translator(), False
+        )
     test_map = {
-        "What **is** your name?": [
-            mk_token(0, "What", 4),
-            mk_token(7, "is", 9),
-            mk_token(12, "your name?", 22),
-        ],
+        "What **is** your name?":
+            ["What", "is", "your name?"],
+        "```py\nHow do you mean?\n```":
+            ["How do you mean?"],
+        "I shall never! **let them buy their wedding**.":
+            ["I shall never", "let them buy their wedding"],
+        "Can <@368671236370464769> make sure that one eats puddin?":
+            ["Can", "make sure that one eats puddin?"],
+        "<@368671236370464769> needs to hold the spread of **lies**":
+            ["needs to hold the spread of", "lies"],
+        "Insiders <@368671236370464769> fighting for insiders. "
+        "```diff\n- TIME TO STOP\n```":
+            ["Insiders", "fighting for insiders", "TIME TO STOP"],
+        "```js\n- What does it mean to be?```\n"
+        "And how does it affect you? <@368671236370464769> <:smile:123>":
+            ["What does it mean to be?", "And how does it affect you?"],
+        "Insiders <@368671236370464769> fighting for insiders. "
+        "\u200b```diff\n- TIME TO STOP\n```":
+            ["Insiders", "fighting for insiders"],
+        "```js\n- What does it **mean** to be?```\n"
+        "\u200bAnd how does it \u200baffect you? <@368671236370464769> "
+        "<:smile:123> \u200bif i may say so.":
+            ["What does it", "mean", "to be?", "affect you?"],
     }
     agent.cache = Mock()
     for src, tokenls in test_map.items():
-        assert agent.tokenize(src) == tokenls
+        assert [a["phrase"] for a in agent.tokenize(src)] == tokenls

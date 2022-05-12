@@ -154,6 +154,76 @@ async def i18n_InteractionResponse_send_modal(self: InteractionResponse, modal: 
     return await InteractionResponse_send_modal(self, modal)
 
 
+class AgentSession:
+    def __init__(
+        self,
+        translate_all: Optional[bool] = None,
+        translate_messages: Optional[bool] = None,
+        translate_embeds: Optional[bool] = None,
+        translate_buttons: Optional[bool] = None,
+        translate_selects: Optional[bool] = None,
+        translate_modals: Optional[bool] = None,
+        source_lang: Optional[Language] = None
+    ):
+        """
+        A context menu to temporarily reconfigure the translation settings until
+        it has been exited.
+
+        ### Parameters:
+            translate_x = temporarily enable translation for x
+
+            source_lang = the language in which text is written in the bot
+                defaults to: whichever language is set to `Agent.source_lang`
+
+        E.g.
+        ```py
+        with AgentSession(translate_embeds=False):
+            await ctx.reply(
+                embed=Embed(
+                    title="Theoretical Physics",
+                    description="This description will never be translated.",
+                )
+            )
+        ```
+        The is basically equivalent to:
+        ```py
+        DEFAULT = Agent.translate_embeds
+        Agent.translate_embeds = False
+        await ctx.reply(
+            embed=Embed(
+                title="Theoretical Physics",
+                description="This description will never be translated.",
+            )
+        )
+        Agent.translate_embeds = DEFAULT
+        ```
+        """
+
+        vmap = {
+            "translate_messages": translate_messages,
+            "translate_embeds": translate_embeds,
+            "translate_buttons": translate_buttons,
+            "translate_selects": translate_selects,
+            "translate_modals": translate_modals,
+            "source_lang": source_lang,
+        }
+        self.prior = {key: getattr(Agent, key, None) for key in vmap}
+
+        for key, val in vmap.items():
+            if translate_all and key.startswith("translate_"):
+                setattr(Agent, key, True)
+            elif val is not None:
+                setattr(Agent, key, val)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *arg, **kwds):
+        for key, val in self.prior.items():
+            if val is not None:
+                setattr(Agent, key, val)
+
+
 class Agent:
     translator = Translator()
     detector = Detector()

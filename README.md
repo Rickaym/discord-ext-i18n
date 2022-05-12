@@ -131,6 +131,7 @@ bot.run("TOKEN")
 2. [How does the extension work?](#how-does-the-extension-work)
 3. [What does it use to translate the string?](#what-does-it-use-to-translate-the-string)
 4. [When are strings not translated?](#when-are-strings-not-translated)
+5. [How do I avoid translation on specific function calls?](#how-do-i-avoid-translation-on-specific-function-calls)
 
 ### How do we tell the extension to translate x?
 
@@ -165,6 +166,11 @@ library. You can override this with your own translator like in the example
 Strings are not translated in cases where either if the text are already
 detected to be in the language
 that it should be translated into, or the destination no preference.
+
+### How do I avoid translation on specific function calls?
+
+You can switch the flags to process specific call translations with some
+code changes. One example is the command `selective` [here](https://github.com/Rickaym/discord-ext-i18n/blob/master/examples/settings.py).
 
 ---
 
