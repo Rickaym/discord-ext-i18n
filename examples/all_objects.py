@@ -1,3 +1,4 @@
+from os import getenv
 from typing import Optional
 from discord.ext import commands
 from discord import (
@@ -10,12 +11,13 @@ from discord import (
 from random import randint
 
 from functools import partial
+
+from dotenv import load_dotenv
 from discord.ext.i18n import Agent, Language, Detector, AgentSession
 from discord.enums import InputTextStyle
 from discord.ui import View, Button, Modal, Select
 from discord.ui.input_text import InputText
 
-from discord.ext.i18n.preprocess import TranslationAgent
 
 intents = Intents.default()
 intents.messages = True
@@ -190,4 +192,5 @@ async def selective(ctx):
             )
         )
 
-bot.run("TOKEN")
+load_dotenv()
+bot.run(getenv("TOKEN"))

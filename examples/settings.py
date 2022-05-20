@@ -1,8 +1,7 @@
 from typing import Optional
 from discord.ext import commands
 from discord import Embed, Intents
-from discord.ext.i18n import Agent, Language, Detector
-from discord.ext.i18n.agent import AgentSession
+from discord.ext.i18n import Agent, Language, Detector, AgentSession
 
 intents = Intents.default()
 intents.messages = True

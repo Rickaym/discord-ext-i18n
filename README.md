@@ -1,4 +1,4 @@
-# Auto Translation Extension for [PyCord](https://github.com/Pycord-Development/pycord)
+# A [PyCord](https://github.com/Pycord-Development/pycord) extension for internationalization
 
 <a href="https://discord.gg/UmnzdPgn6g"><img src="https://img.shields.io/badge/GET SUPPORT-DISCORD-orange?style=for-the-badge&logo=discord&logoColor=white&color=5865F2"></a>
 <a href="https://github.com/Pycord-Development/pycord"><img src="https://img.shields.io/badge/Pycord-%3E=2.0.0b5-orange?style=for-the-badge&logo=python&logoColor=white"></a>
@@ -184,4 +184,4 @@ code changes. One example is the command `selective` [here](https://github.com/R
 
 [-] More tests
 
-Contributions are absolutely welcome, just create a pull-request and I'll merge them if reasonable.
+Contributions are absolutely welcome, please create a pull-request and I'll merge them if reasonable. All modules except for `agent.py` is symlinked from the repository [discord-i18n-backend](https://pypi.org/project/discord-ext-i18n).
