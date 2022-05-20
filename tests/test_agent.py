@@ -23,7 +23,7 @@ def m_obj(base=object, **kwds):
     """
 
     class Mime:
-        __class__ = base
+        __class__ = base  # type: ignore
 
         def __init__(self):
             self.__dict__.update(kwds)
@@ -41,7 +41,7 @@ def m_obj(base=object, **kwds):
             if self.__class__ != Messageable:
                 raise NotImplementedError
             else:
-                return self.channel
+                return self.channel  # type: ignore
 
     return Mime()
 

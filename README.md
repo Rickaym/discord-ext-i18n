@@ -26,7 +26,7 @@ Translations will carry over markdown!
 
 _GoogleTranslated string in different languages with formatting maintained_
 
-Check out the [FAQ](#features-extended--faq) and [Examples](#Examples) for more information.
+Check out the [FAQ](#faq) and [Examples](#Examples) for more information.
 This extension is relatively new, therefore please report any bugs at [issues](https://github.com/Rickaym/discord-ext-i18n/issues).
 
 ## Fields Covered by Automatic Translation
@@ -125,8 +125,40 @@ bot.run("TOKEN")
 5. [Optimized](https://github.com/Rickaym/discord-ext-i18n/blob/master/examples/optimized.py) - An example on how to ignore translation on parts of a string that is prone to change
 6. [All Objects](https://github.com/Rickaym/discord-ext-i18n/blob/master/examples/all_objects.py) - A summary example of every object that is affected by translation + all features discussed prior
 
-## Features Extended & FAQ
+## Technical
+- [Tokenization](#Tokenization)
+- [Constants](#constants)
 
+### Tokenization
+
+Tokenization breaks down a string in any order or magnitude of markdown decorations to the extent accepted by discord, into separate tokens to ready for batch translation. Once translated, the new phrases are reassembeled into correct positions and thus maintaining decorative characters fairly accurately.
+
+### Constants
+This library implements constants for:
+1. Language `Names` *to* `Code` *to* `Emoji` enum
+
+Examples:
+```py
+>>> Language.English.code
+... en
+>>> Language.English.emoji
+... 🏴󠁧󠁢󠁥󠁮󠁧󠁿
+>>> Language.name
+... english
+```
+To access enum elements for a specific language through it's corresponding code or name:
+```py
+>>> Language.from_code("en")
+... Language.English
+>>> Language.from_name("english")
+... Language.English
+```
+
+2. Codeblock identifiers
+
+`CODEBLOCK_LANGS` is an exhaustive set of string identifiers that are considered valid code block languages in the tokenizer.
+
+## FAQ
 1. [How do we tell the extension to translate x?](#how-do-we-tell-the-extension-to-translate-x)
 2. [How does the extension work?](#how-does-the-extension-work)
 3. [What does it use to translate the string?](#what-does-it-use-to-translate-the-string)
@@ -183,5 +215,3 @@ code changes. One example is the command `selective` [here](https://github.com/R
 [-] Support translation in Webhooks
 
 [-] More tests
-
-Contributions are absolutely welcome, please create a pull-request and I'll merge them if reasonable. All modules except for `agent.py` is symlinked from the repository [discord-i18n-backend](https://pypi.org/project/discord-ext-i18n).
