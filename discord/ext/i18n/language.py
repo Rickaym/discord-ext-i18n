@@ -621,8 +621,8 @@ CODEBLOCK_LANGS = {
 
 class Language(Enum):
     """
-    An Enum for all the languages supported and has properties `emoji`,
-    `name` and `code`.
+    An Enum for all the languages supported and has properties
+    `name`, `code` and `emoji`.
     """
 
     Afrikaans = "af"

@@ -26,8 +26,8 @@ Translations will carry over markdown!
 
 _GoogleTranslated string in different languages with formatting maintained_
 
-Check out the [FAQ](#faq) and [Examples](#Examples) for more information.
-This extension is relatively new, therefore please report any bugs at [issues](https://github.com/Rickaym/discord-ext-i18n/issues).
+Check out the [FAQ](#faq), [Examples](#Examples) and [other feathers](#features-extended) for more information.
+This extension is relatively new so please report any bugs at [issues](https://github.com/Rickaym/discord-ext-i18n/issues)!
 
 ## Fields Covered by Automatic Translation
 
@@ -125,10 +125,7 @@ bot.run("TOKEN")
 5. [Optimized](https://github.com/Rickaym/discord-ext-i18n/blob/master/examples/optimized.py) - An example on how to ignore translation on parts of a string that is prone to change
 6. [All Objects](https://github.com/Rickaym/discord-ext-i18n/blob/master/examples/all_objects.py) - A summary example of every object that is affected by translation + all features discussed prior
 
-## Technical
-- [Tokenization](#Tokenization)
-- [Constants](#constants)
-
+## Features Extended
 ### Tokenization
 
 Tokenization breaks down a string in any order or magnitude of markdown decorations to the extent accepted by discord, into separate tokens to ready for batch translation. Once translated, the new phrases are reassembeled into correct positions and thus maintaining decorative characters fairly accurately.
