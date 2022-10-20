@@ -13,8 +13,8 @@
 
 The extension is able to automatically translate all
 specified objects [here](#fields-covered-by-automatic-translation) into any registered language
-depending on the preferences of the channel or guild that the object
-is getting sent to. For instance, if a channel has the preference for Spanish, any messages, embeds etc.. that are being sent to the channel will be automatically translated into Spanish before it is sent.
+depending on the preferences of the destination channel or guild.
+For instance, if a channel has the preference for Spanish, any messages, embeds etc.. that are being sent to the channel will be automatically translated into Spanish before it is sent.
 
 Translations will carry over markdown!
 
