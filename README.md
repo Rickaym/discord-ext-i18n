@@ -4,6 +4,10 @@
 <a href="https://github.com/Pycord-Development/pycord"><img src="https://img.shields.io/badge/Pycord-%3E=2.0.0b5-orange?style=for-the-badge&logo=python&logoColor=white"></a>
 <a href="https://pypi.org/project/discord-ext-i18n"><img src="https://img.shields.io/pypi/v/discord-ext-i18n?style=for-the-badge&logo=pypi&logoColor=white&color=green"></a>
 
+```diff
++ Note: `Agent` class has been renamed as `AutoI18nAgent` but the old name is still supported
+```
+
 ## Key Features
 
 - Automatic text translations for messages, embeds [etc..](#fields-covered-by-automatic-translation)
@@ -60,14 +64,14 @@ py -3 -m pip install -U discord-ext-i18n
 - Define a language getter function decorated with the `Detector.lang_getter` decorator
   (this getter is called with an ID of _guilds / channels_ to see if it has a
   language preference)
-- Instantiate a `discord.ext.i18n.Agent` class to configure and inject code
+- Instantiate a `discord.ext.i18n.AutoI18nAgent` class to configure and inject code
 - Create a command for users to set preferences
 
 ```py
 from typing import Optional
 from discord.ext import commands
 from discord import Intents
-from discord.ext.i18n import Agent, Language, Detector
+from discord.ext.i18n import AutoI18nAgent, Language, Detector
 
 intents = Intents.default()
 # not necessary for the extension, enabled for msg commands
@@ -79,7 +83,7 @@ bot = commands.Bot(
     intents=intents,
 )
 bot.preferences = {}
-bot.agent = Agent(translate_all=True)  # This must be instantiated at least and only once
+bot.agent = AutoI18nAgent(translate_all=True)  # This must be instantiated at least and only once
 
 
 @Detector.lang_getter
@@ -166,7 +170,7 @@ To access enum elements for a specific language through it's corresponding code 
 
 By default, the extension will translate all messages and ignore others. If you want
 to translate other objects such as buttons, embeds and so on, you will have
-to explicitly specify them as a parameter when instantiating the `Agent` class or modify the
+to explicitly specify them as a parameter when instantiating the `AutoI18nAgent` class or modify the
 `translate_x` flag from the class. See detailed example [here](https://github.com/Rickaym/discord-ext-i18n/blob/master/examples/settings.py)
 
 Apart from that, you can call the usual methods like `Messegable.send`,

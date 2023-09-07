@@ -49,10 +49,10 @@ def wrap_i18n_editer(edit_func: InterfaceOverridable):
     """
 
     async def wrapped_i18n_edit(self: Union[Message, InteractionResponse], **kwds):
-        dest_lang = await Agent.detector.first_language_of(self)
+        dest_lang = await AutoI18nAgent.detector.first_language_of(self)
         if dest_lang:
             kwds["content"] = TranslationAgent.encode_lang_str(
-                Agent.source_lang, kwds.get("content", None) or "", dest_lang
+                AutoI18nAgent.source_lang, kwds.get("content", None) or "", dest_lang
             )
         return await edit_func(self, **kwds)
 
@@ -73,7 +73,7 @@ def i18n_HTTPClient_edit_message(
         content, lang = TranslationAgent.decode_lang_str(fields["content"])
         if lang:
             fields, fields["content"] = TranslationAgent.translate_payload(
-                lang, fields, content, **Agent.translate_config()
+                lang, fields, content, **AutoI18nAgent.get_config()
             )
     return HTTPClient_edit_message(self, channel_id, message_id, **fields)
 
@@ -87,10 +87,10 @@ def wrap_i18n_sender(send_func: InterfaceOverridable):
     async def wrapped_i18n_send(
         self: Union[Messageable, InteractionResponse], content=None, *_, **kwds
     ):
-        dest_lang = await Agent.detector.first_language_of(self)
+        dest_lang = await AutoI18nAgent.detector.first_language_of(self)
         if dest_lang:
             content = TranslationAgent.encode_lang_str(
-                Agent.source_lang, content, dest_lang
+                AutoI18nAgent.source_lang, content, dest_lang
             )
             if await try_defer(self):
                 return await self._parent.followup.send(content, **kwds)  # type: ignore
@@ -114,7 +114,7 @@ def i18n_HTTPClient_send_message(
         payload, lang = TranslationAgent.decode_lang_str(content)
         if lang:
             kwds, content = TranslationAgent.translate_payload(
-                lang, kwds, payload, **Agent.translate_config()
+                lang, kwds, payload, **AutoI18nAgent.get_config()
             )
     return HTTPClient_send_message(self, channel_id, content, **kwds)
 
@@ -133,7 +133,7 @@ def i18n_Adapter_create_interaction_response(self: AsyncWebhookAdapter, *args, *
                 kwds["data"],
                 kwds["data"][content_type],
             ) = TranslationAgent.translate_payload(
-                lang, kwds["data"], content, **Agent.translate_config()
+                lang, kwds["data"], content, **AutoI18nAgent.get_config()
             )
     return AsyncWebhookAdapter_create_interaction_response(self, *args, **kwds)
 
@@ -147,7 +147,7 @@ def i18n_AsyncWebhookAdapter_execute_webhook(self: AsyncWebhookAdapter, *args, *
                     kwds["payload"],
                     kwds["payload"]["content"],
                 ) = TranslationAgent.translate_payload(
-                    lang, kwds["payload"], content, **Agent.translate_config()
+                    lang, kwds["payload"], content, **AutoI18nAgent.get_config()
                 )
     return AsyncWebhookAdapter_execute_webhook(self, *args, **kwds)
 
@@ -160,10 +160,10 @@ async def i18n_InteractionResponse_send_modal(self: InteractionResponse, modal: 
     TODO: Very problematic if translation functions are slow, often ends up
     timing out on responses.
     """
-    dest_lang = await Agent.detector.first_language_of(self)
+    dest_lang = await AutoI18nAgent.detector.first_language_of(self)
     if dest_lang:
         modal.title = TranslationAgent.encode_lang_str(
-            Agent.source_lang, modal.title, dest_lang
+            AutoI18nAgent.source_lang, modal.title, dest_lang
         )
     return await InteractionResponse_send_modal(self, modal)
 
@@ -258,11 +258,14 @@ class AgentSession:
         A context menu to temporarily reconfigure the translation settings until
         it has been exited.
 
-        ### Parameters:
-            translate_x = temporarily enable translation for x
+        Parameters
+        ----------
 
-            source_lang = the language in which text is written in the bot
-                defaults to: whichever language is set to `Agent.source_lang`
+        translate_{x}: bool
+            Temporary flag for translating x interface
+        source_lang: Language
+            Language in which the source text is written in the bot. Defaults
+            to `Language.English`
 
         E.g.
         ```py
@@ -274,17 +277,17 @@ class AgentSession:
                 )
             )
         ```
-        The is basically equivalent to:
+        Technically equivalent to:
         ```py
-        DEFAULT = Agent.translate_embeds
-        Agent.translate_embeds = False
+        DEFAULT = AutoI18nAgent.translate_embeds
+        AutoI18nAgent.translate_embeds = False
         await ctx.reply(
             embed=Embed(
                 title="Theoretical Physics",
                 description="This description will never be translated.",
             )
         )
-        Agent.translate_embeds = DEFAULT
+        AutoI18nAgent.translate_embeds = DEFAULT
         ```
         """
 
@@ -296,24 +299,24 @@ class AgentSession:
             "translate_modals": translate_modals,
             "source_lang": source_lang,
         }
-        self.prior = {key: getattr(Agent, key, None) for key in vmap}
+        self.initial_config = {key: getattr(AutoI18nAgent, key, None) for key in vmap}
 
         for key, val in vmap.items():
             if translate_all and key.startswith("translate_"):
-                setattr(Agent, key, True)
+                setattr(AutoI18nAgent, key, True)
             elif val is not None:
-                setattr(Agent, key, val)
+                setattr(AutoI18nAgent, key, val)
 
     def __enter__(self):
         return self
 
     def __exit__(self, *arg, **kwds):
-        for key, val in self.prior.items():
+        for key, val in self.initial_config.items():
             if val is not None:
-                setattr(Agent, key, val)
+                setattr(AutoI18nAgent, key, val)
 
 
-class Agent:
+class AutoI18nAgent:
     translator = Translator()
     detector = Detector()
 
@@ -343,18 +346,22 @@ class Agent:
         At any given case, you cannot initialize this class more than
         once.
 
-        ### Parameters:
-            translate_x = enable translation for x
-                defaults to: True for `translate_messages` and False for else
-            source_lang = the language in which text is written in the bot
-                defaults to: `Language.English`
-            handle_webhooks = enable webhook translations (this is not a
-            static property and is only settable through params)
+        Parameters
+        ----------
+        translate_{x}: bool
+            Flag for translating x interface, defaults to `True` for
+            `translate_messages` and `False` for everything else
+        source_lang: Language
+            Language in which the source text is written in the bot. Defaults
+            to `Language.English`
+        handle_webhooks: bool
+            enable webhook translations (not a static property and
+            is only settable through this parameter)
         """
-        if Agent._instantiated:
+        if AutoI18nAgent._instantiated:
             raise TypeError("this class should only be instantiated once")
         else:
-            Agent._instantiated = True
+            AutoI18nAgent._instantiated = True
 
         setattr(
             AsyncWebhookAdapter,
@@ -396,27 +403,48 @@ class Agent:
             "source_lang": source_lang,
         }.items():
             if translate_all and key.startswith("translate_"):
-                setattr(Agent, key, True)
+                setattr(AutoI18nAgent, key, True)
             elif val is not None:
-                setattr(Agent, key, val)
+                setattr(AutoI18nAgent, key, val)
 
     @staticmethod
-    def translate_config():
+    def get_config():
         """
-        Returns a dictionary of configurations needed to run down a payload
-        translation.
+        Returns a dictionary of configurations needed for translation.
         """
         return {
-            "source_lang": Agent.source_lang,
-            "translator": Agent.translator,
+            "source_lang": AutoI18nAgent.source_lang,
+            "translator": AutoI18nAgent.translator,
             "translate_components": (
-                Agent.translate_buttons
-                or Agent.translate_selects
-                or Agent.translate_modals
+                AutoI18nAgent.translate_buttons
+                or AutoI18nAgent.translate_selects
+                or AutoI18nAgent.translate_modals
             ),
-            "translate_messages": Agent.translate_messages,
-            "translate_embeds": Agent.translate_embeds,
-            "translate_buttons": Agent.translate_buttons,
-            "translate_selects": Agent.translate_selects,
-            "translate_modals": Agent.translate_modals,
+            "translate_messages": AutoI18nAgent.translate_messages,
+            "translate_embeds": AutoI18nAgent.translate_embeds,
+            "translate_buttons": AutoI18nAgent.translate_buttons,
+            "translate_selects": AutoI18nAgent.translate_selects,
+            "translate_modals": AutoI18nAgent.translate_modals,
         }
+
+
+# alias for backwards compatibility
+Agent = AutoI18nAgent
+
+
+def no_translate(text: str):
+    """
+    Wraps the text with \u200b (zero width space) characters to tells
+    the translator to skip the text.
+
+    Parameters
+    ----------
+    text : str
+        The text to be skipped.
+
+    Returns
+    -------
+    str
+        The text wrapped with special characters.
+    """
+    return f"\u200b{text}\u200b"

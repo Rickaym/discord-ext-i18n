@@ -1,20 +1,19 @@
 from typing import Optional
-from discord.ext import commands
-from discord import Intents
-from discord.ext.i18n import Agent, Language, Detector
+from discord import Intents, Bot, Cog, commands, ApplicationContext
+from discord.ext.i18n import AutoI18nAgent, Language, Detector
 
 intents = Intents.default()
 intents.messages = True
 intents.message_content = True
 
-bot = commands.Bot(
+bot = Bot(
     command_prefix="!",
     intents=intents,
 )
-bot.agent = Agent(translate_all=True)
+bot.agent = AutoI18nAgent(translate_all=True)
 
 
-class SomeCog(commands.Cog, Detector):
+class SomeCog(Cog, Detector):
     """
     A language getter defined inside a cog must be subclassed under Detector.
     (compatible with a cog).
@@ -28,18 +27,23 @@ class SomeCog(commands.Cog, Detector):
     async def get_lang(self, id) -> Optional[Language]:
         return self.preferences.get(id, None)
 
-    @commands.command(name="lang")
-    async def set_lang(self, ctx, lang_code):
+    @commands.slash_command(name="lang")
+    async def set_lang(self, ctx: ApplicationContext, lang_code: str):
+        """
+        Set the language for the bot in the current channel.
+        """
         lang = Language.from_code(lang_code)
         if lang is None:
-            return await ctx.reply("Bad language code!")
+            return await ctx.respond("Bad language code!")
         elif lang is Language.English:
-            if ctx.channel.id in self.preferences:
-                self.preferences.pop(ctx.channel.id)
+            if ctx.channel.id in bot.preferences:
+                bot.preferences.pop(ctx.channel.id)
         else:
-            self.preferences[ctx.channel.id] = lang
+            bot.preferences[ctx.channel.id] = lang
 
-        await ctx.reply(f"I've set the language to `{lang.name.title()}` {lang.emoji}!")
+        await ctx.respond(
+            f"I've set the language to `{lang.name.title()}` {lang.emoji}!"
+        )
 
     @commands.command(name="hi")
     async def greet(self, ctx):

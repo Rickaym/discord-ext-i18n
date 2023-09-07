@@ -142,9 +142,9 @@ class TranslationAgent:
                     embed = template_embed.copy()
                     if "fields" in embed:
                         for field in embed["fields"]:
-                            if field["name"].strip() and field["name"] != "\u200b":
+                            if field["name"].strip() and field["name"] != TranslationAgent.delim:
                                 field["name"] = agent.translate(field["name"])
-                            if field["value"].strip() and field["value"] != "\u200b":
+                            if field["value"].strip() and field["value"] != TranslationAgent.delim:
                                 field["value"] = agent.translate(field["value"])
 
                     if (

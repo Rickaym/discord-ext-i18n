@@ -1,19 +1,18 @@
 from typing import Optional
-from discord.ext import commands
-from discord import Intents
-from discord.ext.i18n import Agent, Language, Detector
+from discord import Intents, Bot, ApplicationContext
+from discord.ext.i18n import AutoI18nAgent, Language, Detector
 
 intents = Intents.default()
 # not necessary for the extension, enabled for msg commands
 intents.messages = True
 intents.message_content = True
 
-bot = commands.Bot(
+bot = Bot(
     command_prefix="!",
     intents=intents,
 )
 bot.preferences = {}
-bot.agent = Agent(
+bot.agent = AutoI18nAgent(
     translate_all=True
 )  # This must be instantiated at least and only once
 
@@ -27,20 +26,21 @@ async def get_lang(id) -> Optional[Language]:
     return bot.preferences.get(id, None)
 
 
-@bot.command(name="lang")
-async def set_lang(ctx, lang_code):
+@bot.slash_command(name="lang")
+async def set_lang(ctx: ApplicationContext, lang_code: str):
+    """
+    Set the language for the bot in the current channel.
+    """
     lang = Language.from_code(lang_code)
     if lang is None:
-        return await ctx.reply("Bad language code!")
+        return await ctx.respond("Bad language code!")
     elif lang is Language.English:
-        # Bot is already in the english language so we remove their preferences
         if ctx.channel.id in bot.preferences:
             bot.preferences.pop(ctx.channel.id)
     else:
-        # Set a language preference to the current channel.
         bot.preferences[ctx.channel.id] = lang
 
-    await ctx.reply(f"I've set the language to `{lang.name.title()}` {lang.emoji}!")
+    await ctx.respond(f"I've set the language to `{lang.name.title()}` {lang.emoji}!")
 
 
 @bot.command(name="hi")
