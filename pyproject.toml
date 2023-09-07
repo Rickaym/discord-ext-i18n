@@ -1,0 +1,22 @@
+[project]
+name = "discord-ext-i18n"
+version = "0.0.8"
+authors = [
+  { name="Rickaym" },
+]
+description = "A Pycord extension to support automatic text translations in 107 languages."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers=[
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/Rickaym/discord-ext-i18n"
+"Bug Tracker" = "https://github.com/Rickaym/discord-ext-i18n/issues"
