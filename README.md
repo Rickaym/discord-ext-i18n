@@ -4,9 +4,8 @@
 <a href="https://github.com/Pycord-Development/pycord"><img src="https://img.shields.io/badge/Pycord-%3E=2.0.0b5-orange?style=for-the-badge&logo=python&logoColor=white"></a>
 <a href="https://pypi.org/project/discord-ext-i18n"><img src="https://img.shields.io/pypi/v/discord-ext-i18n?style=for-the-badge&logo=pypi&logoColor=white&color=green"></a>
 
-```diff
-+ Note: `Agent` class has been renamed as `AutoI18nAgent` but the old name is still supported
-```
+> [!NOTE]
+> `Agent` class has been renamed as `AutoI18nAgent` but the old name is still supported
 
 ## Key Features
 
@@ -20,13 +19,15 @@ specified objects [here](#fields-covered-by-automatic-translation) into any regi
 depending on the preferences of the destination channel or guild.
 For instance, if a channel has the preference for Spanish, any messages, embeds etc.. that are being sent to the channel will be automatically translated into Spanish before it is sent.
 
-Translations will carry over markdown!
+> [!TIP]
+> Translations will carry over markdown!
+> 
+> ```
+> I've set the language to `English` 🏴󠁧󠁢󠁥󠁮󠁧󠁿!
+> + He establecido el idioma en `Spanish` 🇪🇸!
+> + ငါဘာသာစကားကိုထားတယ် `မြန်မာ (ဗမာ)` 🇲🇲!
+> ```
 
-```diff
-+ I've set the language to `English` 🏴󠁧󠁢󠁥󠁮󠁧󠁿!
-+ He establecido el idioma en `Spanish` 🇪🇸!
-+ ငါဘာသာစကားကိုထားတယ် `မြန်မာ (ဗမာ)` 🇲🇲!
-```
 
 _GoogleTranslated string in different languages with formatting maintained_
 
